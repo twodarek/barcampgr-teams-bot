@@ -16,12 +16,11 @@ func main() {
 
 	httpClient := &http.Client{}
 
-	teamsClient := webexteams.NewClient()
-	initTeamsClient(teamsClient)
-
 	conf := Config{
 		APIToken: os.Getenv("CISCO_TEAMS_API_TOKEN"),
 	}
+	teamsClient := webexteams.NewClient()
+	initTeamsClient(teamsClient, conf)
 
 	ac := barcampgr.NewAppController(
 		teamsClient,
@@ -37,7 +36,7 @@ func main() {
 	select {}
 }
 
-func initTeamsClient(client *webexteams.Client) error {
-	
+func initTeamsClient(client *webexteams.Client, config Config) error {
+	client.SetAuthToken(config.APIToken)
 	return nil
 }

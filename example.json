@@ -3,9 +3,6 @@
   "lastUpdate": "25may2020 9:30pm",
   "times": [
     {
-      "logo": "this is a placeholder"
-    },
-    {
       "id": 1,
       "start": "6:30pm",
       "end": "6:55pm"

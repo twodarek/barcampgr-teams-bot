@@ -38,8 +38,8 @@ func New(
 	log.Println("Starting barcampgr-teams-bot")
 
 	// routes for chatops
-	s.router.HandleFunc("/v1/chatops/help/{commandName}", s.authMiddleWare(appHandler.GetHelp)).Methods("GET")
-
+	s.router.HandleFunc("/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
+	s.router.HandleFunc("/v1/schedule", s.authMiddleWare(appHandler.HandleChatop)).Methods("GET")
 
 	return s
 }
