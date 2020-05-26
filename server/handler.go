@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
@@ -26,14 +27,19 @@ func (ah *AppHandler) HandleChatop(w http.ResponseWriter, r *http.Request) {
 	resultant, err := ah.AppController.HandleChatop(requestData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error in handling chatop call: %s", err)
 		w.Write([]byte(err.Error()))
 	} else {
 		w.Write([]byte(resultant))
-		w.WriteHeader(http.StatusOK)
 	}
 	return
 }
 
+func (ah *AppHandler) RootHello(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte("Hello world!"))
+	return
+}
 
 func (ah *AppHandler) GetScheduleJson(w http.ResponseWriter, r *http.Request) {
 	schedule, err := ah.AppController.GetScheduleJson()

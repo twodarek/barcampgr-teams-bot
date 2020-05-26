@@ -19,8 +19,8 @@ type ScheduleRow struct {
 }
 
 type ScheduleSession struct {
-	time int `json:"time"`
-	room int `json:"room"`
-	title string `json:"title"`
-	speaker string `json:"speaker"`
+	Time int `json:"time"`
+	Room int `json:"room"`
+	Title string `json:"title"`
+	Speaker string `json:"speaker"`
 }
