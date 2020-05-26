@@ -31,7 +31,7 @@ func main() {
 	teamsClient := webexteams.NewClient()
 	initTeamsClient(teamsClient, conf)
 
-	sdb := database.NewDatabase(conf)
+	sdb := database.NewDatabase(conf.MySqlUser, conf.MySqlPass, conf.MySqlServer, conf.MySqlPort, conf.MySqlDatabase)
 
 	ac := barcampgr.NewAppController(
 		teamsClient,
@@ -65,7 +65,7 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 
 	testWebhook, _, err := client.Webhooks.CreateWebhook(webhookRequest)
 	if err != nil {
-		log.Fatal(fmt.Printf("Failed to create webhook: %s", err))\
+		log.Fatal(fmt.Printf("Failed to create webhook: %s", err))
 	}
 
 	fmt.Printf("Created webhook. ID: %s, Name: %s, target URL: %s, created: %s", testWebhook.ID, testWebhook.Name, testWebhook.TargetURL, testWebhook.Created)
