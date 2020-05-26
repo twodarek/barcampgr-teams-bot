@@ -35,12 +35,12 @@ func New(
 	log.Println("Starting barcampgr-teams-bot")
 
 	// routes for chatops
-	s.router.HandleFunc("/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
-	s.router.HandleFunc("/v1/schedule", s.authMiddleWare(appHandler.HandleChatop)).Methods("GET")
+	s.router.HandleFunc("/api/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
+	s.router.HandleFunc("/api/v1/schedule", s.authMiddleWare(appHandler.HandleChatop)).Methods("GET")
 	//TODO(twodarek) create the below webhook to allow remote creation of the database if need be
-	s.router.HandleFunc("/v1/migrate/create/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
+	s.router.HandleFunc("/api/v1/migrate/create/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
 	//TODO(twodarek) create the below webhook to allow any of the organizers to create the next "block" of sessions
-	s.router.HandleFunc("/v1/migrate/generate/{sessionBlock}/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
+	s.router.HandleFunc("/api/v1/migrate/generate/{sessionBlock}/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
 
 	return s
 }

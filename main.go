@@ -27,6 +27,8 @@ func main() {
 		MySqlPort: os.Getenv("MYSQL_PORT"),
 		MySqlDatabase: os.Getenv("MYSQL_DATABASE"),
 		AdminPassword: os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
+		WebexRoomID: os.Getenv("WEBEX_ROOM_ID"),
+		WebexCallbackURL: os.Getenv("WEBEX_CALLBACK_URL"),
 	}
 	teamsClient := webexteams.NewClient()
 	initTeamsClient(teamsClient, conf)
@@ -50,8 +52,8 @@ func main() {
 
 func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	client.SetAuthToken(config.APIToken)
-	myRoomID := ""   // Change to your testing room
-	webHookURL := "" // Change this to your test URL
+	myRoomID := config.WebexRoomID
+	webHookURL := config.WebexCallbackURL
 
 	// POST webhooks
 

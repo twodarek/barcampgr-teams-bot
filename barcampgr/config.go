@@ -8,6 +8,8 @@ type Config struct {
 	MySqlPort string
 	MySqlDatabase string
 	AdminPassword string
+	WebexRoomID string
+	WebexCallbackURL string
 }
 
 func New(
@@ -18,6 +20,8 @@ func New(
 	mySqlPort string,
 	mySqlDatabase string,
 	adminPassword string,
+	webexRoomID string,
+	webexCallbackURL string,
 ) *Config {
 	c := &Config{
 		APIToken: apiToken,
@@ -27,6 +31,8 @@ func New(
 		MySqlPort: mySqlPort,
 		MySqlDatabase: mySqlDatabase,
 		AdminPassword: adminPassword,
+		WebexRoomID: webexRoomID,
+		WebexCallbackURL: webexCallbackURL,
 	}
 	return c
 }

@@ -8,7 +8,7 @@ COPY . .
 RUN go build
 
 
-FROM debian:jessie-slim
+FROM thomaswo/ubuntu-base-image:20200525
 
 COPY --from=base /go/src/twodarek/barcampgr-teams-bot/barcampgr-teams-bot /usr/local/bin
 
