@@ -35,7 +35,8 @@ func New(
 	log.Println("Starting barcampgr-teams-bot")
 
 	// routes for chatops
-	s.router.HandleFunc("/", s.authMiddleWare(appHandler.RootHello)).Methods("GET")
+	//s.router.PathPrefix("/").Handler(http.FileServer(http.Dir("./front-end")))
+	s.router.HandleFunc("/api/", s.authMiddleWare(appHandler.RootHello)).Methods("GET")
 	s.router.HandleFunc("/api/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
 	s.router.HandleFunc("/api/v1/schedule", s.authMiddleWare(appHandler.GetScheduleJson)).Methods("GET")
 	//TODO(twodarek) create the below webhook to allow remote creation of the database if need be
