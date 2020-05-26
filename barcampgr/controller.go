@@ -7,24 +7,29 @@ import (
 	"net/http"
 
 	webexteams "github.com/jbogarin/go-cisco-webex-teams/sdk"
+
+	"github.com/twodarek/barcampgr-teams-bot/database"
 )
 
 type Controller struct {
 	teamsClient	*webexteams.Client
 	httpClient   *http.Client
-	apiToken    string
+	sdb          *database.ScheduleDatabase
+	config    Config
 }
 
 func NewAppController(
 	teamsClient	*webexteams.Client,
 	httpClient *http.Client,
-	apiToken string,
+	sdb        *database.ScheduleDatabase,
+	config Config,
 
 ) *Controller {
 	return &Controller{
 		teamsClient:  teamsClient,
 		httpClient:   httpClient,
-		apiToken:     apiToken,
+		sdb:          sdb,
+		config:     config,
 	}
 }
 
@@ -46,4 +51,8 @@ func (ac *Controller) GetScheduleJson() (Schedule, error) {
 		Rows:        nil,
 	}
 	return schedule, nil
+}
+
+func (ac *Controller) MigrateDB() error {
+	return ac.sdb.MigrateDB()
 }

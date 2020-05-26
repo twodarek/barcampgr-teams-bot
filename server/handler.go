@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"net/http"
 
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
@@ -11,6 +12,7 @@ import (
 
 type AppHandler struct {
 	AppController *barcampgr.Controller
+	config barcampgr.Config
 }
 
 func (ah *AppHandler) HandleChatop(w http.ResponseWriter, r *http.Request) {
@@ -47,5 +49,21 @@ func (ah *AppHandler) GetScheduleJson(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(scheduleJson)
+	return
+}
+
+func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	if vars["password"] != "" {
+		if vars["password"] == ah.config.AdminPassword {
+			err := ah.AppController.MigrateDB()
+			if err == nil {
+				w.Write([]byte("done"))
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+		}
+	}
+	w.WriteHeader(http.StatusUnauthorized)
 	return
 }

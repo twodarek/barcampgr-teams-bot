@@ -11,27 +11,24 @@ import (
 
 type Server struct {
 	AppController *barcampgr.Controller
-
-	apiToken string
-
+	config barcampgr.Config
 	router *mux.Router
 }
 
 func New(
 	ac *barcampgr.Controller,
-	apiToken string,
+	config barcampgr.Config,
 	router *mux.Router,
 ) *Server {
 	s := &Server{
 		AppController: ac,
-
-		apiToken: apiToken,
-
+		config: config,
 		router: router,
 	}
 
 	appHandler := AppHandler{
 		AppController: ac,
+		config: config,
 	}
 
 
@@ -40,6 +37,10 @@ func New(
 	// routes for chatops
 	s.router.HandleFunc("/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
 	s.router.HandleFunc("/v1/schedule", s.authMiddleWare(appHandler.HandleChatop)).Methods("GET")
+	//TODO(twodarek) create the below webhook to allow remote creation of the database if need be
+	s.router.HandleFunc("/v1/migrate/create/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
+	//TODO(twodarek) create the below webhook to allow any of the organizers to create the next "block" of sessions
+	s.router.HandleFunc("/v1/migrate/generate/{sessionBlock}/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
 
 	return s
 }
