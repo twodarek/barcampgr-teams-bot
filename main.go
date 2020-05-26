@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+	log.Println("Attempting to start barcampgr-teams-bot")
 	router := mux.NewRouter()
 
 	httpClient := &http.Client{}
@@ -30,10 +31,13 @@ func main() {
 		WebexRoomID: os.Getenv("WEBEX_ROOM_ID"),
 		WebexCallbackURL: os.Getenv("WEBEX_CALLBACK_URL"),
 	}
+	log.Println("Attempting to start webex teams client")
 	teamsClient := webexteams.NewClient()
 	initTeamsClient(teamsClient, conf)
+	log.Println("Webex teams client started, connecting to database")
 
 	sdb := database.NewDatabase(conf.MySqlUser, conf.MySqlPass, conf.MySqlServer, conf.MySqlPort, conf.MySqlDatabase)
+	log.Println("Database connected")
 
 	ac := barcampgr.NewAppController(
 		teamsClient,
@@ -47,22 +51,38 @@ func main() {
 	// Multiple codepaths use the DefaultServeMux so we start listening at the top
 	go http.ListenAndServe("0.0.0.0:8080", s)
 
+	log.Println("Barcampgr-teams-bot started")
+
 	select {}
 }
 
 func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	client.SetAuthToken(config.APIToken)
-	myRoomID := config.WebexRoomID
 	webHookURL := config.WebexCallbackURL
 
-	// POST webhooks
+	// Clean up old webhooks
+	webhooksQueryParams := &webexteams.ListWebhooksQueryParams{
+		Max: 10,
+	}
 
+	webhooks, _, err := client.Webhooks.ListWebhooks(webhooksQueryParams)
+	if err != nil {
+		log.Printf("Unable to get old webhooks, continuing anyway")
+	}
+	for _, webhook := range webhooks.Items {
+		_, err := client.Webhooks.DeleteWebhook(webhook.ID)
+		if err != nil {
+			log.Printf("Unable to clean up old webhook")
+		}
+	}
+
+	// Create new webhook
 	webhookRequest := &webexteams.WebhookCreateRequest{
 		Name:      "BarCampGR Webhook - Test",
 		TargetURL: webHookURL,
 		Resource:  "messages",
 		Event:     "created",
-		Filter:    "roomId=" + myRoomID,
+
 	}
 
 	testWebhook, _, err := client.Webhooks.CreateWebhook(webhookRequest)
@@ -70,6 +90,6 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 		log.Fatal(fmt.Printf("Failed to create webhook: %s", err))
 	}
 
-	fmt.Printf("Created webhook. ID: %s, Name: %s, target URL: %s, created: %s", testWebhook.ID, testWebhook.Name, testWebhook.TargetURL, testWebhook.Created)
+	log.Printf("Created webhook. ID: %s, Name: %s, target URL: %s, created: %s", testWebhook.ID, testWebhook.Name, testWebhook.TargetURL, testWebhook.Created)
 	return nil
 }
