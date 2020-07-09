@@ -10,6 +10,8 @@ RUN go build
 
 FROM thomaswo/ubuntu-base-image:20200525
 
+RUN mkdir -p /public/front-end
+COPY --from=base /go/src/twodarek/barcampgr-teams-bot/front-end /public/front-end
 COPY --from=base /go/src/twodarek/barcampgr-teams-bot/barcampgr-teams-bot /usr/local/bin
 
 ENTRYPOINT ["/usr/local/bin/barcampgr-teams-bot"]

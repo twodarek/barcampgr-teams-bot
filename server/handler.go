@@ -65,7 +65,6 @@ func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {
 			err := ah.AppController.MigrateDB()
 			if err == nil {
 				w.Write([]byte("done"))
-				w.WriteHeader(http.StatusOK)
 				return
 			}
 		}
