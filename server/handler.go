@@ -72,3 +72,37 @@ func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusUnauthorized)
 	return
 }
+
+func (ah *AppHandler) GetTimesJson(w http.ResponseWriter, r *http.Request) {
+	times, err := ah.AppController.GetTimesJson()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	timesJson, err := json.Marshal(times)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(timesJson)
+	return
+}
+
+func (ah *AppHandler) GetRoomsJson(w http.ResponseWriter, r *http.Request) {
+	rooms, err := ah.AppController.GetRoomsJson()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	roomsJson, err := json.Marshal(rooms)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(roomsJson)
+	return
+}

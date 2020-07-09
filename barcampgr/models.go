@@ -24,3 +24,8 @@ type ScheduleSession struct {
 	Title string `json:"title"`
 	Speaker string `json:"speaker"`
 }
+
+type ScheduleRoom struct {
+	Name string `json:"name"`
+	ID int `json:"id"`
+}

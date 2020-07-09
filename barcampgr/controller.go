@@ -116,6 +116,18 @@ func (ac *Controller) GetScheduleJson() (Schedule, error) {
 	return schedule, nil
 }
 
+func (ac *Controller) GetTimesJson() ([]ScheduleTime, error) {
+	var times []database.DBScheduleTime
+	ac.sdb.Orm.Find(&times)
+	return ac.convertTimes(times), nil
+}
+
+func (ac *Controller) GetRoomsJson() ([]ScheduleRoom, error) {
+	var rooms []database.DBScheduleRoom
+	ac.sdb.Orm.Find(&rooms)
+	return ac.convertRooms(rooms), nil
+}
+
 func (ac *Controller) convertTimes(times []database.DBScheduleTime) []ScheduleTime {
 	var resultant []ScheduleTime
 	for _, t := range times {
@@ -123,6 +135,17 @@ func (ac *Controller) convertTimes(times []database.DBScheduleTime) []ScheduleTi
 			ID:    int(t.ID),
 			Start: t.Start,
 			End:   t.End,
+		})
+	}
+	return resultant
+}
+
+func (ac *Controller) convertRooms(rooms []database.DBScheduleRoom) []ScheduleRoom {
+	var resultant []ScheduleRoom
+	for _, r := range rooms {
+		resultant = append(resultant, ScheduleRoom{
+			Name: r.Name,
+			ID:   int(r.ID),
 		})
 	}
 	return resultant

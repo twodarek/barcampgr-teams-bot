@@ -38,6 +38,8 @@ func New(
 	s.router.HandleFunc("/api/", s.authMiddleWare(appHandler.RootHello)).Methods("GET")
 	s.router.HandleFunc("/api/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
 	s.router.HandleFunc("/api/v1/schedule", s.authMiddleWare(appHandler.GetScheduleJson)).Methods("GET")
+	s.router.HandleFunc("/api/v1/times", s.authMiddleWare(appHandler.GetTimesJson)).Methods("GET")
+	s.router.HandleFunc("/api/v1/rooms", s.authMiddleWare(appHandler.GetRoomsJson)).Methods("GET")
 	//TODO(twodarek) create the below webhook to allow remote creation of the database if need be
 	s.router.HandleFunc("/api/v1/migrate/create/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
 	//TODO(twodarek) create the below webhook to allow any of the organizers to create the next "block" of sessions
