@@ -35,7 +35,6 @@ func New(
 	log.Println("Starting barcampgr-teams-bot")
 
 	// routes for chatops
-	//s.router.PathPrefix("/").Handler(http.FileServer(http.Dir("./front-end")))
 	s.router.HandleFunc("/api/", s.authMiddleWare(appHandler.RootHello)).Methods("GET")
 	s.router.HandleFunc("/api/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
 	s.router.HandleFunc("/api/v1/schedule", s.authMiddleWare(appHandler.GetScheduleJson)).Methods("GET")
@@ -43,6 +42,7 @@ func New(
 	s.router.HandleFunc("/api/v1/migrate/create/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
 	//TODO(twodarek) create the below webhook to allow any of the organizers to create the next "block" of sessions
 	s.router.HandleFunc("/api/v1/migrate/generate/{sessionBlock}/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
+	s.router.PathPrefix("/").Handler(http.FileServer(http.Dir("/public/front-end")))
 
 	return s
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type ScheduleDatabase struct {
-	orm *gorm.DB
+	Orm *gorm.DB
 }
 
 func NewDatabase(user, pass, server, port, database string) *ScheduleDatabase {
@@ -28,7 +28,7 @@ func (sdb *ScheduleDatabase) initDB(user, pass, server, port, database string) e
 	err = nil
 	dataSourceName := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=utf8&parseTime=True",
 		user, pass, server, port, database)
-	sdb.orm, err = gorm.Open("mysql", dataSourceName)
+	sdb.Orm, err = gorm.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Printf("Error: %s", err)
 		return err
@@ -37,6 +37,6 @@ func (sdb *ScheduleDatabase) initDB(user, pass, server, port, database string) e
 }
 
 func (sdb *ScheduleDatabase) MigrateDB() error {
-	sdb.orm.AutoMigrate(&DBScheduleRoom{}, &DBScheduleTime{}, &DBScheduleSession{})
+	sdb.Orm.AutoMigrate(&DBScheduleRoom{}, &DBScheduleTime{}, &DBScheduleSession{})
 	return nil
 }

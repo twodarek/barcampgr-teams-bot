@@ -94,15 +94,67 @@ func (ac *Controller) handleCommand (message, displayName string) (string, error
 }
 
 func (ac *Controller) GetScheduleJson() (Schedule, error) {
+	var times []database.DBScheduleTime
+	var sessions []database.DBScheduleSession
+	var rooms []database.DBScheduleRoom
+
+	ac.sdb.Orm.Find(&times)
+	outTimes := ac.convertTimes(times)
+
+	ac.sdb.Orm.Find(&sessions)
+	ac.sdb.Orm.Find(&rooms)
+
+	outRows := ac.buildRows(sessions, rooms)
+
 	schedule := Schedule{
 		RefreshedAt: "",
 		LastUpdate:  "",
-		Times:       nil,
-		Rows:        nil,
+		Times:       outTimes,
+		Rows:        outRows,
 	}
+
 	return schedule, nil
+}
+
+func (ac *Controller) convertTimes(times []database.DBScheduleTime) []ScheduleTime {
+	var resultant []ScheduleTime
+	for _, t := range times {
+		resultant = append(resultant, ScheduleTime{
+			ID:    int(t.ID),
+			Start: t.Start,
+			End:   t.End,
+		})
+	}
+	return resultant
+}
+
+func (ac *Controller) buildRows(sessions []database.DBScheduleSession, rooms []database.DBScheduleRoom) []ScheduleRow {
+	var resultant []ScheduleRow
+
+	for _,r := range rooms {
+		resultant = append(resultant, ScheduleRow{
+			Room:    r.Name,
+			Sessions: ac.getSessionsInRoom(r.Name, sessions),
+		})
+	}
+	return resultant
 }
 
 func (ac *Controller) MigrateDB() error {
 	return ac.sdb.MigrateDB()
+}
+
+func (ac *Controller) getSessionsInRoom(name string, sessions []database.DBScheduleSession) []ScheduleSession {
+	var resultant []ScheduleSession
+	for _,s := range sessions {
+		if s.Room.Name == name {
+			resultant = append(resultant, ScheduleSession{
+				Time:    int(s.Time.ID),
+				Room:    int(s.Room.ID),
+				Title:   s.Title,
+				Speaker: s.Speaker,
+			})
+		}
+	}
+	return resultant
 }
