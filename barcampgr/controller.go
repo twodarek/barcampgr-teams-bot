@@ -59,7 +59,7 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 	//TODO(twodarek): Figure out what the message sent was and deal with it
 	replyText, err := ac.handleCommand(message.Text, person.DisplayName)
 	if err != nil || replyText == "" {
-		replyText = fmt.Sprintf("Hello %s!  I have received your request of '%s', but I don't know how to do that right now.", person.DisplayName, message.Text)
+		replyText = fmt.Sprintf("Hello %s!  I have received your request of '%s', but I'm unable to do that right now.  Message: %s, Error: %s", person.DisplayName, message.Text, replyText, err)
 	}
 	replyMessage := &webexteams.MessageCreateRequest{
 		RoomID:        message.RoomID,
@@ -81,15 +81,116 @@ func (ac *Controller) handleCommand (message, displayName string) (string, error
 	commandArray := strings.Split(message, " ")
 	switch strings.ToLower(commandArray[0]) {
 		case "schedule":
-			log.Printf("Hi %s, I'm attempting to schedule block with message %s, commandArray %s", displayName, message, commandArray)
-			return "I'm attempting to schedule you for a talk", nil
+			log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, displayName)
+			message, err := ac.parseAndScheduleTalk(displayName, commandArray[1:])
+			return message, err
 		case "test":
 			log.Printf("Test message %s, commandArray %s", message, commandArray)
 			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), nil
 		case "help":
-			return fmt.Sprintf("I accept the following commands:\n - `Schedule me in ROOM at START_TIME for TITLE` to schedule a talk\n - `test MESSAGE_TO_ECHO` to test this bot\n - `help` to get this message"), nil
+			return fmt.Sprintf("I accept the following commands:\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test MESSAGE_TO_ECHO` to test this bot\n - `help` to get this message"), nil
 		default:
-			return "", errors.New("command unknown")
+			return "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
+	}
+}
+
+func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []string) (string, error) {
+	var name string
+	var time string
+	var room string
+	var title string
+	currentArrayPos := 0
+	message := ""
+	// me at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
+
+	if strings.ToLower(commandArray[0]) == "me" {
+		name = displayName
+		currentArrayPos = 1
+		// skip 'at' command word
+	} else {
+		for i, s := range commandArray {
+			name = name + " " + s
+			if ac.isCommandWord(commandArray[i + 1]) {
+				currentArrayPos = i + 1
+				break
+			}
+		}
+	}
+	name = strings.TrimPrefix(name, " ")
+
+	// at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
+	// skip 'at' command word
+	currentArrayPos++
+	time = commandArray[currentArrayPos]
+
+	// in The Hotdog Stand for Speaking to Bots, a Minecraft Story
+	// skip 'in' command word
+	currentArrayPos++
+	for i, s := range commandArray[currentArrayPos:] {
+		room = room + " " + s
+		if ac.isCommandWord(commandArray[i + currentArrayPos]) {
+			currentArrayPos = i + currentArrayPos
+			break
+		}
+	}
+	room = strings.TrimPrefix(room, " ")
+
+	// for Speaking to Bots, a Minecraft Story
+	// skip 'for' command word
+	currentArrayPos++
+	for _, s := range commandArray[currentArrayPos:] {
+		title = title + " " + s
+	}
+	title = strings.TrimPrefix(title, " ")
+
+	var timeObj database.DBScheduleTime
+	result := ac.sdb.Orm.Where("start = ?", time).Find(&timeObj)
+	if result.Error != nil {
+		log.Printf("Received error %s when trying to query for time starting at %s", result.Error, time)
+		return fmt.Sprintf("Unable to find a time starting at %s", time), result.Error
+	}
+
+	var roomObj database.DBScheduleRoom
+	result = ac.sdb.Orm.Where("name = ?", time).Find(&roomObj)
+	if result.Error != nil {
+		log.Printf("Received error %s when trying to query for room %s", result.Error, room)
+		return fmt.Sprintf("Unable to find a room named %s", room), result.Error
+	}
+
+	session := database.DBScheduleSession{
+		Time:    timeObj,
+		Room:    roomObj,
+		Updater: displayName,
+		Title:   title,
+		Speaker: name,
+	}
+
+	result = ac.sdb.Orm.Create(&session)
+	if result.Error != nil {
+		log.Printf("Received error %s when trying to create talk %s", result.Error, ac.commandArrayToString(commandArray))
+		return message, result.Error
+	} else {
+		log.Printf("Created talk %s with %d rows affected", ac.commandArrayToString(commandArray), result.RowsAffected)
+		message = fmt.Sprintf("I've scheduled your session %s", session.ToString())
+	}
+
+	return message, nil
+}
+
+func (ac *Controller) commandArrayToString(array []string) string {
+	var resultant string
+	for _,s := range array {
+		resultant = resultant + " " + s
+	}
+	return strings.TrimPrefix(resultant, " ")
+}
+
+func (ac *Controller) isCommandWord(check string) bool {
+	switch check {
+	case "at", "in", "for":
+		return true
+	default:
+		return false
 	}
 }
 

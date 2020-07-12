@@ -1,6 +1,9 @@
 package database
 
-import "github.com/jinzhu/gorm"
+import (
+	"fmt"
+	"github.com/jinzhu/gorm"
+)
 
 type DBScheduleTime struct {
 	gorm.Model
@@ -20,4 +23,8 @@ type DBScheduleSession struct {
 	Updater string
 	Title string
 	Speaker string
+}
+
+func (s DBScheduleSession) ToString() string {
+	return fmt.Sprintf("Title: %s, Speaker: %s, Start Time: %s, Room: %s", s.Title, s.Speaker, s.Time.Start, s.Room.Name)
 }
