@@ -7,14 +7,15 @@ import (
 
 type DBScheduleTime struct {
 	gorm.Model
-	Start string
+	Day string
+	Start string `gorm:"unique;not null"`
 	End string
 	Displayable bool `gorm:"default:false"`
 }
 
 type DBScheduleRoom struct {
 	gorm.Model
-	Name string
+	Name string `gorm:"unique;not null"`
 }
 
 type DBScheduleSession struct {

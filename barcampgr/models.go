@@ -11,6 +11,7 @@ type ScheduleTime struct {
 	ID int `json:"id"`
 	Start string `json:"start"`
 	End string `json:"end"`
+	Day string `json:"day"`
 }
 
 type ScheduleRow struct {

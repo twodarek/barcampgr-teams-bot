@@ -265,6 +265,80 @@ func (ac *Controller) buildRows(sessions []database.DBScheduleSession, rooms []d
 }
 
 func (ac *Controller) RollSchedule(scheduleBlock string) error  {
+	switch scheduleBlock {
+	case "fri-pm":
+		var times []ScheduleTime
+		times = append(times, ScheduleTime{
+			Start: "5:00pm",
+			End:   "5:55pm",
+			Day:   "Friday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "6:00pm",
+			End:   "6:25pm",
+			Day:   "Friday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "6:30pm",
+			End:   "6:55pm",
+			Day:   "Friday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "7:00pm",
+			End:   "7:25pm",
+			Day:   "Friday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "7:30pm",
+			End:   "7:55pm",
+			Day:   "Friday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "8:00pm",
+			End:   "8:25pm",
+			Day:   "Friday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "8:30pm",
+			End:   "8:55pm",
+			Day:   "Friday",
+		})
+		ac.createTimeBlockAndDisableOthers(times)
+	case "sat-am":
+		var times []ScheduleTime
+		ac.createTimeBlockAndDisableOthers(times)
+	case "sat-pm":
+		var times []ScheduleTime
+		ac.createTimeBlockAndDisableOthers(times)
+	case "rooms":
+		return ac.confirmAndGenerateRooms()
+	default:
+		return errors.New("not allowed")
+
+	}
+	return nil
+}
+
+func (ac *Controller) confirmAndGenerateRooms() error {
+	rooms := [7]string{"Main Room", "120", "130", "140", "150", "160", "170"}
+	for _, room := range rooms {
+		var roomObj database.DBScheduleRoom
+		result := ac.sdb.Orm.Where("name = ?", room).Find(roomObj)
+		if result.Error != nil {
+			log.Printf("Error in finding existing room %s, Type: %T, Message: %s", room, result.Error, result.Error)
+			//TODO(twodarek): Change this to use https://stackoverflow.com/questions/39333102/how-to-create-or-update-a-record-with-gorm
+			result = ac.sdb.Orm.Create(&database.DBScheduleRoom{
+				Name: room,
+			})
+			log.Printf("Error in creating room %s, Type: %T, Message: %s", room, result.Error, result.Error)
+		}
+	}
+	return nil
+}
+
+func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) error {
+	//TODO(twodarek): Disable all displayable values in the table http://gorm.io/docs/update.html#Update-Changed-Fields
+	//TODO(twodarek): Create/Enable only the ones in this list
 	return nil
 }
 
