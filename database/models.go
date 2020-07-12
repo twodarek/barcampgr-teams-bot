@@ -9,6 +9,7 @@ type DBScheduleTime struct {
 	gorm.Model
 	Start string
 	End string
+	Displayable bool `gorm:"default:false"`
 }
 
 type DBScheduleRoom struct {

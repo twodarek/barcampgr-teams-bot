@@ -73,6 +73,21 @@ func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func (ah *AppHandler) RollSchedule(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	if vars["password"] != "" {
+		if vars["password"] == ah.config.AdminPassword {
+			err := ah.AppController.RollSchedule(vars["sessionBlock"])
+			if err == nil {
+				w.Write([]byte("done"))
+				return
+			}
+		}
+	}
+	w.WriteHeader(http.StatusUnauthorized)
+	return
+}
+
 func (ah *AppHandler) GetTimesJson(w http.ResponseWriter, r *http.Request) {
 	times, err := ah.AppController.GetTimesJson()
 	if err != nil {

@@ -264,6 +264,10 @@ func (ac *Controller) buildRows(sessions []database.DBScheduleSession, rooms []d
 	return resultant
 }
 
+func (ac *Controller) RollSchedule(scheduleBlock string) error  {
+	return nil
+}
+
 func (ac *Controller) MigrateDB() error {
 	return ac.sdb.MigrateDB()
 }
