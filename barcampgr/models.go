@@ -12,6 +12,7 @@ type ScheduleTime struct {
 	Start string `json:"start"`
 	End string `json:"end"`
 	Day string `json:"day"`
+	Displayable bool `json:"displayable"`
 }
 
 type ScheduleRow struct {

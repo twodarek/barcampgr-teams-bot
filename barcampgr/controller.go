@@ -3,6 +3,7 @@ package barcampgr
 import (
 	"errors"
 	"fmt"
+	"github.com/jinzhu/gorm"
 	"log"
 	"net/http"
 	"strings"
@@ -122,6 +123,7 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 	// skip 'at' command word
 	currentArrayPos++
 	time = commandArray[currentArrayPos]
+	currentArrayPos++
 
 	// in The Hotdog Stand for Speaking to Bots, a Minecraft Story
 	// skip 'in' command word
@@ -236,6 +238,8 @@ func (ac *Controller) convertTimes(times []database.DBScheduleTime) []ScheduleTi
 			ID:    int(t.ID),
 			Start: t.Start,
 			End:   t.End,
+			Day:   t.Day,
+			Displayable: t.Displayable,
 		})
 	}
 	return resultant
@@ -303,7 +307,10 @@ func (ac *Controller) RollSchedule(scheduleBlock string) error  {
 			End:   "8:55pm",
 			Day:   "Friday",
 		})
-		ac.createTimeBlockAndDisableOthers(times)
+		result := ac.createTimeBlockAndDisableOthers(times)
+		if len(result) < 0 {
+			return result[0]
+		}
 	case "sat-am":
 		var times []ScheduleTime
 		ac.createTimeBlockAndDisableOthers(times)
@@ -314,7 +321,6 @@ func (ac *Controller) RollSchedule(scheduleBlock string) error  {
 		return ac.confirmAndGenerateRooms()
 	default:
 		return errors.New("not allowed")
-
 	}
 	return nil
 }
@@ -330,16 +336,45 @@ func (ac *Controller) confirmAndGenerateRooms() error {
 			result = ac.sdb.Orm.Create(&database.DBScheduleRoom{
 				Name: room,
 			})
-			log.Printf("Error in creating room %s, Type: %T, Message: %s", room, result.Error, result.Error)
+			if result.Error != nil {
+				log.Printf("Error in creating room %s, Type: %T, Message: %s", room, result.Error, result.Error)
+			}
 		}
 	}
 	return nil
 }
 
-func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) error {
+func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) []error {
 	//TODO(twodarek): Disable all displayable values in the table http://gorm.io/docs/update.html#Update-Changed-Fields
-	//TODO(twodarek): Create/Enable only the ones in this list
-	return nil
+	timeObj := database.DBScheduleTime{}
+	var resultErrors []error
+	result := ac.sdb.Orm.Model(&timeObj).Where("displayable = ?", true).Update("displayable", false)
+	if result.Error != nil {
+		resultErrors = append(resultErrors, result.Error)
+		return resultErrors
+	}
+	for _, time := range times {
+		if err := ac.sdb.Orm.Where("start = ?", time.Start).First(&timeObj).Error; err != nil {
+			if gorm.IsRecordNotFoundError(err){
+				timeObj = database.DBScheduleTime{
+					Day:         time.Day,
+					Start:       time.Start,
+					End:         time.End,
+					Displayable: true,
+				}
+				result = ac.sdb.Orm.Create(&timeObj)
+				if result.Error != nil {
+					resultErrors = append(resultErrors, result.Error)
+				}
+			}
+		}else{
+			result = ac.sdb.Orm.Model(&timeObj).Where("id = ?", time.ID).Update("displayable", true)
+			if result.Error != nil {
+				resultErrors = append(resultErrors, result.Error)
+			}
+		}
+	}
+	return resultErrors
 }
 
 func (ac *Controller) MigrateDB() error {
@@ -349,7 +384,7 @@ func (ac *Controller) MigrateDB() error {
 func (ac *Controller) getSessionsInRoom(name string, sessions []database.DBScheduleSession) []ScheduleSession {
 	var resultant []ScheduleSession
 	for _,s := range sessions {
-		if s.Room.Name == name {
+		if s.Room.Name == name && s.Time.Displayable {
 			resultant = append(resultant, ScheduleSession{
 				Time:    int(s.Time.ID),
 				Room:    int(s.Room.ID),
