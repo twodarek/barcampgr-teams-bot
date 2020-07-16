@@ -1,6 +1,7 @@
 package barcampgr
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
@@ -85,6 +86,19 @@ func (ac *Controller) handleCommand (message, displayName string) (string, error
 			log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, displayName)
 			message, err := ac.parseAndScheduleTalk(displayName, commandArray[1:])
 			return message, err
+		case "get":
+			switch strings.ToLower(commandArray[1]) {
+			case "schedule":
+				schedule, err := ac.GetScheduleJson()
+				bytes, err := json.Marshal(schedule)
+				if err != nil {
+					fmt.Println("Can't serialize", bytes)
+				}
+
+				return fmt.Sprintf("%v => %v, '%v'\n", schedule, bytes, string(bytes)), err
+			default:
+				return "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
+			}
 		case "test":
 			log.Printf("Test message %s, commandArray %s", message, commandArray)
 			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), nil
@@ -130,15 +144,15 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 	currentArrayPos++
 	for i, s := range commandArray[currentArrayPos:] {
 		room = room + " " + s
-		if ac.isCommandWord(commandArray[i + currentArrayPos]) {
-			currentArrayPos = i + currentArrayPos
+		if ac.isCommandWord(commandArray[i + currentArrayPos + 1]) {
+			currentArrayPos = i + currentArrayPos + 1
 			break
 		}
 	}
 	room = strings.TrimPrefix(room, " ")
 
 	// for Speaking to Bots, a Minecraft Story
-	// skip 'for' command word
+	// skip command word "for"
 	currentArrayPos++
 	for _, s := range commandArray[currentArrayPos:] {
 		title = title + " " + s
@@ -153,7 +167,7 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 	}
 
 	var roomObj database.DBScheduleRoom
-	result = ac.sdb.Orm.Where("name = ?", time).Find(&roomObj)
+	result = ac.sdb.Orm.Where("lower(name) = ?", strings.ToLower(room)).Find(&roomObj)
 	if result.Error != nil {
 		log.Printf("Received error %s when trying to query for room %s", result.Error, room)
 		return fmt.Sprintf("Unable to find a room named %s", room), result.Error
