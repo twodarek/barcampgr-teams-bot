@@ -92,7 +92,7 @@ func (ac *Controller) handleCommand (message, displayName string) (string, error
 				schedule, err := ac.GetScheduleJson()
 				bytes, err := json.Marshal(schedule)
 				if err != nil {
-					fmt.Println("Can't serialize", bytes)
+					log.Println("Can't serialize", bytes)
 				}
 
 				return fmt.Sprintf("%v => %v, '%v'\n", schedule, bytes, string(bytes)), err
@@ -174,8 +174,8 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 	}
 
 	session := database.DBScheduleSession{
-		Time:    timeObj,
-		Room:    roomObj,
+		Time:    &timeObj,
+		Room:    &roomObj,
 		Updater: displayName,
 		Title:   title,
 		Speaker: name,
@@ -212,15 +212,15 @@ func (ac *Controller) isCommandWord(check string) bool {
 
 func (ac *Controller) GetScheduleJson() (Schedule, error) {
 	var times []database.DBScheduleTime
-	var sessions []database.DBScheduleSession
 	var rooms []database.DBScheduleRoom
+	var sessions []database.DBScheduleSession
 
 	ac.sdb.Orm.Find(&times)
 	outTimes := ac.convertTimes(times)
 
-	ac.sdb.Orm.Find(&sessions)
 	ac.sdb.Orm.Find(&rooms)
-
+	ac.sdb.Orm.Find(&sessions)
+	ac.fillTimes(sessions, times)
 	outRows := ac.buildRows(sessions, rooms)
 
 	schedule := Schedule{
@@ -248,13 +248,15 @@ func (ac *Controller) GetRoomsJson() ([]ScheduleRoom, error) {
 func (ac *Controller) convertTimes(times []database.DBScheduleTime) []ScheduleTime {
 	var resultant []ScheduleTime
 	for _, t := range times {
-		resultant = append(resultant, ScheduleTime{
-			ID:    int(t.ID),
-			Start: t.Start,
-			End:   t.End,
-			Day:   t.Day,
-			Displayable: t.Displayable,
-		})
+		if t.Displayable {
+			resultant = append(resultant, ScheduleTime{
+				ID:          int(t.ID),
+				Start:       t.Start,
+				End:         t.End,
+				Day:         t.Day,
+				Displayable: t.Displayable,
+			})
+		}
 	}
 	return resultant
 }
@@ -273,10 +275,11 @@ func (ac *Controller) convertRooms(rooms []database.DBScheduleRoom) []ScheduleRo
 func (ac *Controller) buildRows(sessions []database.DBScheduleSession, rooms []database.DBScheduleRoom) []ScheduleRow {
 	var resultant []ScheduleRow
 
+	log.Printf("Sessions: %d Rooms: %d", len(sessions), len(rooms))
 	for _,r := range rooms {
 		resultant = append(resultant, ScheduleRow{
 			Room:    r.Name,
-			Sessions: ac.getSessionsInRoom(r.Name, sessions),
+			Sessions: ac.getSessionsInRoom(sessions, r),
 		})
 	}
 	return resultant
@@ -395,17 +398,28 @@ func (ac *Controller) MigrateDB() error {
 	return ac.sdb.MigrateDB()
 }
 
-func (ac *Controller) getSessionsInRoom(name string, sessions []database.DBScheduleSession) []ScheduleSession {
+func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, room database.DBScheduleRoom) []ScheduleSession {
 	var resultant []ScheduleSession
 	for _,s := range sessions {
-		if s.Room.Name == name && s.Time.Displayable {
+		if s.Time.Displayable && s.RoomID == int(room.ID) {
 			resultant = append(resultant, ScheduleSession{
 				Time:    int(s.Time.ID),
-				Room:    int(s.Room.ID),
+				Room:    int(room.ID),
 				Title:   s.Title,
 				Speaker: s.Speaker,
 			})
 		}
 	}
 	return resultant
+}
+
+func (ac *Controller) fillTimes(sessions []database.DBScheduleSession, times []database.DBScheduleTime) []database.DBScheduleSession {
+	for i, s := range sessions {
+		for _, t := range times {
+			if s.TimeID == int(t.ID) {
+				sessions[i].Time = &t
+			}
+		}
+	}
+	return sessions
 }
