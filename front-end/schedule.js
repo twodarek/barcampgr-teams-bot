@@ -2,10 +2,9 @@ var sample = JSON.parse('{"refreshedAt":"25may2020 10:00pm","lastUpdate":"25may2
 var sample2 = JSON.parse('{"refreshedAt":"","lastUpdate":"","times":[{"id":1,"start":"5:00pm","end":"5:55pm","day":"Friday","displayable":true},{"id":2,"start":"6:00pm","end":"6:25pm","day":"Friday","displayable":true},{"id":3,"start":"6:30pm","end":"6:55pm","day":"Friday","displayable":true},{"id":4,"start":"7:00pm","end":"7:25pm","day":"Friday","displayable":true},{"id":5,"start":"7:30pm","end":"7:55pm","day":"Friday","displayable":true},{"id":6,"start":"8:00pm","end":"8:25pm","day":"Friday","displayable":true},{"id":7,"start":"8:30pm","end":"8:55pm","day":"Friday","displayable":true}],"rows":[{"room":"Main Room","sessions":[{"time":6,"room":1,"title":"derpity derp derp","speaker":"Derpy McDerperson"}]},{"room":"120","sessions":[{"time":3,"room":2,"title":"DERP","speaker":"Thomas Wodarek"}]},{"room":"130","sessions":null},{"room":"140","sessions":[{"time":7,"room":4,"title":"This is an awesome talk","speaker":"thomas wodarek"}]},{"room":"150","sessions":null},{"room":"160","sessions":[{"time":2,"room":6,"title":"idk","speaker":"meh"},{"time":1,"room":6,"title":"This is a mediocre talk","speaker":"Some Shmuck"}]},{"room":"170","sessions":null}]}')
 
 $(function() {
-    // var url = "https://talks.twodarek.dev/api/v1/schedule";
-    // httpGetAsync(url, loadSchedule);
-    createSchedule(sample2);
-    populateSchedule(sample2);
+    var url = "/api/v1/schedule";
+    httpGetAsync(url, createSchedule);
+    // createSchedule(sample2);
 });
 
 function getSlotId(room, timeId) {
@@ -41,6 +40,7 @@ function createSchedule(data) {
         }
         table.appendChild(row);
     }
+    populateSchedule(data)
 }
 
 function populateSchedule(data) {

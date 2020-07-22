@@ -11,19 +11,17 @@ type DBScheduleTime struct {
 	Start string `gorm:"unique;not null"`
 	End string
 	Displayable bool `gorm:"default:false"`
-	DBScheduleSession []*DBScheduleSession `gorm:"ForeignKey:ID;AssociationForeignKey:TimeID"`
 }
 
 type DBScheduleRoom struct {
 	gorm.Model
 	Name string `gorm:"unique;not null"`
-	DBScheduleSession []*DBScheduleSession `gorm:"ForeignKey:ID;AssociationForeignKey:RoomID"`
 }
 
 type DBScheduleSession struct {
 	gorm.Model
-	Time *DBScheduleTime `gorm:"ForeignKey:RoomID;AssociationForeignKey:ID"`
-	Room *DBScheduleRoom `gorm:"ForeignKey:TimeID;AssociationForeignKey:ID"`
+	Time *DBScheduleTime
+	Room *DBScheduleRoom
 	RoomID int
 	TimeID int
 	Updater string

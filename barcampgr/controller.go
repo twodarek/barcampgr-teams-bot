@@ -179,6 +179,8 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 		Updater: displayName,
 		Title:   title,
 		Speaker: name,
+		TimeID:  int(timeObj.ID),
+		RoomID:  int(roomObj.ID),
 	}
 
 	result = ac.sdb.Orm.Create(&session)
@@ -220,7 +222,7 @@ func (ac *Controller) GetScheduleJson() (Schedule, error) {
 
 	ac.sdb.Orm.Find(&rooms)
 	ac.sdb.Orm.Find(&sessions)
-	ac.fillTimes(sessions, times)
+	sessions = ac.fillTimes(sessions, times)
 	outRows := ac.buildRows(sessions, rooms)
 
 	schedule := Schedule{
@@ -415,9 +417,9 @@ func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, r
 
 func (ac *Controller) fillTimes(sessions []database.DBScheduleSession, times []database.DBScheduleTime) []database.DBScheduleSession {
 	for i, s := range sessions {
-		for _, t := range times {
+		for j, t := range times {
 			if s.TimeID == int(t.ID) {
-				sessions[i].Time = &t
+				sessions[i].Time = &times[j]
 			}
 		}
 	}
