@@ -58,8 +58,7 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 	}
 	log.Printf("Get message from room. Title: %s, Type: %s", room.Title, room.RoomType)
 
-	//TODO(twodarek): Figure out what the message sent was and deal with it
-	replyText, err := ac.handleCommand(message.Text, person.DisplayName)
+	replyText, dmText, err := ac.handleCommand(message.Text, person.DisplayName)
 	if err != nil || replyText == "" {
 		replyText = fmt.Sprintf("Hello %s!  I have received your request of '%s', but I'm unable to do that right now.  Message: %s, Error: %s", person.DisplayName, message.Text, replyText, err)
 	}
@@ -72,12 +71,23 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 		return "", errors.New(fmt.Sprintf("Unable to reply to message %s", message.ID))
 	}
 	log.Printf("Replied with %s, got http code %d, body %s", replyText, resp.StatusCode(), resp.Body())
+	if dmText != "" {
+		replyDmMessage := &webexteams.MessageCreateRequest{
+			ToPersonID:		person.ID,
+			Markdown:      replyText,
+		}
+		_, resp, err := ac.teamsClient.Messages.CreateMessage(replyDmMessage)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("Unable to send dm reply to message %s", message.ID))
+		}
+		log.Printf("Attempted to DM with %s, got http code %d, body %s", replyText, resp.StatusCode(), resp.Body())
+	}
 
 
 	return "", nil
 }
 
-func (ac *Controller) handleCommand (message, displayName string) (string, error) {
+func (ac *Controller) handleCommand (message, displayName string) (string, string, error) {
 	message = strings.TrimPrefix(message, "BarcampGRBot")
 	message = strings.TrimPrefix(message, " ")
 	commandArray := strings.Split(message, " ")
@@ -85,7 +95,7 @@ func (ac *Controller) handleCommand (message, displayName string) (string, error
 		case "schedule":
 			log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, displayName)
 			message, err := ac.parseAndScheduleTalk(displayName, commandArray[1:])
-			return message, err
+			return message, "", err
 		case "get":
 			switch strings.ToLower(commandArray[1]) {
 			case "schedule":
@@ -95,17 +105,17 @@ func (ac *Controller) handleCommand (message, displayName string) (string, error
 					log.Println("Can't serialize", bytes)
 				}
 
-				return fmt.Sprintf("%v => %v, '%v'\n", schedule, bytes, string(bytes)), err
+				return fmt.Sprintf("%v => %v, '%v'\n", schedule, bytes, string(bytes)), "", err
 			default:
-				return "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
+				return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
 			}
 		case "test":
 			log.Printf("Test message %s, commandArray %s", message, commandArray)
-			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), nil
+			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), "", nil
 		case "help":
-			return fmt.Sprintf("I accept the following commands:\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test MESSAGE_TO_ECHO` to test this bot\n - `help` to get this message"), nil
+			return fmt.Sprintf("I accept the following commands:\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test MESSAGE_TO_ECHO` to test this bot\n - `help` to get this message"), "", nil
 		default:
-			return "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
+			return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
 	}
 }
 
