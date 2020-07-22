@@ -112,6 +112,9 @@ func (ac *Controller) handleCommand (message, displayName string) (string, strin
 		case "test":
 			log.Printf("Test message %s, commandArray %s", message, commandArray)
 			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), "", nil
+		case "ping":
+			log.Printf("Ping from %s", displayName)
+			return "Pong", "", nil
 		case "help":
 			return fmt.Sprintf("I accept the following commands:\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test MESSAGE_TO_ECHO` to test this bot\n - `help` to get this message"), "", nil
 		default:
