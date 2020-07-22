@@ -183,16 +183,26 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 		RoomID:  int(roomObj.ID),
 	}
 
-	result = ac.sdb.Orm.Create(&session)
-	if result.Error != nil {
-		log.Printf("Received error %s when trying to create talk %s", result.Error, ac.commandArrayToString(commandArray))
-		return message, result.Error
-	} else {
-		log.Printf("Created talk %s with %d rows affected", ac.commandArrayToString(commandArray), result.RowsAffected)
-		message = fmt.Sprintf("I've scheduled your session %s", session.ToString())
+	var sessionObj database.DBScheduleSession
+	if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ?", session.RoomID, session.TimeID).First(&sessionObj).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err){
+			result = ac.sdb.Orm.Create(&session)
+			if result.Error != nil {
+				log.Printf("Received error %s when trying to create talk %s", result.Error, ac.commandArrayToString(commandArray))
+				return message, result.Error
+			} else {
+				log.Printf("Created talk %s with %d rows affected", ac.commandArrayToString(commandArray), result.RowsAffected)
+				message = fmt.Sprintf("I've scheduled your session %s", session.ToString())
+				return message, nil
+			}
+		} else {
+			log.Printf("Received error %s when trying to create talk %s", result.Error, ac.commandArrayToString(commandArray))
+			return message, result.Error
+		}
 	}
 
-	return message, nil
+	log.Printf("Session already exists at %s in room %s.", session.Time.Start, session.Room.Name)
+	return fmt.Sprintf("I'm sorry, a session already exists at %s in room %s.", session.Time.Start, session.Room.Name), nil
 }
 
 func (ac *Controller) commandArrayToString(array []string) string {
