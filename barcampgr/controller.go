@@ -97,6 +97,9 @@ func (ac *Controller) handleCommand (message, displayName string) (string, strin
 			message, err := ac.parseAndScheduleTalk(displayName, commandArray[1:])
 			return message, "", err
 		case "get":
+			if len(commandArray) < 2 {
+				return "", "", errors.New("the command `get` must have arguments, such as `get schedule`")
+			}
 			switch strings.ToLower(commandArray[1]) {
 			case "schedule":
 				schedule, err := ac.GetScheduleJson()
@@ -435,6 +438,7 @@ func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, r
 				Room:    int(room.ID),
 				Title:   s.Title,
 				Speaker: s.Speaker,
+				UniqueString: s.UniqueString,
 			})
 		}
 	}

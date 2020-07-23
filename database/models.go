@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
 )
 
 type DBScheduleTime struct {
@@ -27,6 +28,7 @@ type DBScheduleSession struct {
 	Updater string
 	Title string
 	Speaker string
+	UniqueString uuid.UUID `gorm:"unique;type:uuid;column:id;default:uuid_generate_v4()`
 }
 
 func (s DBScheduleSession) ToString() string {

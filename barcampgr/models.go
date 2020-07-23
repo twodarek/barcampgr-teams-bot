@@ -1,5 +1,7 @@
 package barcampgr
 
+import uuid "github.com/satori/go.uuid"
+
 type Schedule struct {
 	RefreshedAt string `json:"refreshedAt"`
 	LastUpdate  string `json:"lastUpdate"`
@@ -25,6 +27,7 @@ type ScheduleSession struct {
 	Room int `json:"room"`
 	Title string `json:"title"`
 	Speaker string `json:"speaker"`
+	UniqueString uuid.UUID `json:"-"`
 }
 
 type ScheduleRoom struct {
