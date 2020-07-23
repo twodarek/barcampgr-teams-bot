@@ -115,7 +115,7 @@ func (ac *Controller) handleCommand (message, displayName string) (string, strin
 		case "ping":
 			log.Printf("Ping from %s", displayName)
 			return "Pong", "", nil
-		case "DMping":
+		case "dmping":
 			log.Printf("DMping from %s", displayName)
 			return "Pong", "Pong", nil
 		case "help":
