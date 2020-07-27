@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"log"
+	"math/rand"
 	"net/http"
 	"strings"
+	"time"
 
 	webexteams "github.com/jbogarin/go-cisco-webex-teams/sdk"
 
@@ -15,26 +17,30 @@ import (
 )
 
 type Controller struct {
-	teamsClient	*webexteams.Client
+	teamsClient	 *webexteams.Client
 	httpClient   *http.Client
 	sdb          *database.ScheduleDatabase
-	config    Config
+	config       Config
+	sRand        *rand.Rand
 }
 
 func NewAppController(
 	teamsClient	*webexteams.Client,
-	httpClient *http.Client,
-	sdb        *database.ScheduleDatabase,
-	config Config,
-
+	httpClient  *http.Client,
+	sdb         *database.ScheduleDatabase,
+	config      Config,
 ) *Controller {
+	var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &Controller{
 		teamsClient:  teamsClient,
 		httpClient:   httpClient,
 		sdb:          sdb,
-		config:     config,
+		config:       config,
+		sRand:        seededRand,
 	}
 }
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (string, error) {
 	message, _, err := ac.teamsClient.Messages.GetMessage(requestData.Data.ID)
@@ -42,7 +48,7 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 		return "", errors.New(fmt.Sprintf("Unable to get message id %s", requestData.Data.ID))
 	}
 	log.Printf("Received message `%s` as message id %s in room %s from person %s", message.Text, requestData.Data.ID, message.RoomID, message.PersonID)
-	// chatbot_1  | 2020/05/26 03:34:56 Received message `BarcampGRBot this is a test` as message id Y2lzY29zcGFyazovL3VzL01FU1NBR0UvZGU3ZmMyYzAtOWYwMS0xMWVhLWE0YWUtZDk2MjUyNjYwNzI2 in room Y2lzY29zcGFyazovL3VzL1JPT00vMDVlMjg2NzAtOWUyZC0xMWVhLTkwZGItOWRlOGYwYmY1NzZk from person Y2lzY29zcGFyazovL3VzL1BFT1BMRS9jZjNlMGU4Zi0wZmY3LTRjYzgtODM5MS05NTIxNzQzYjVkMzI
+
 	person, _, err :=ac.teamsClient.People.GetPerson(message.PersonID)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to get person id %s", message.PersonID))
@@ -52,29 +58,32 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 		return "", nil
 	}
 	log.Printf("Got message from person.  Display: %s, Nick: %s, Name: %s %s", person.DisplayName, person.NickName, person.FirstName, person.LastName)
+	
 	room, _, err := ac.teamsClient.Rooms.GetRoom(message.RoomID)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to get room id %s", message.RoomID))
 	}
 	log.Printf("Get message from room. Title: %s, Type: %s", room.Title, room.RoomType)
 
-	replyText, dmText, err := ac.handleCommand(message.Text, person.DisplayName)
+	replyText, dmText, err := ac.handleCommand(message.Text, person)
 	if err != nil || replyText == "" {
 		replyText = fmt.Sprintf("Hello %s!  I have received your request of '%s', but I'm unable to do that right now.  Message: %s, Error: %s", person.DisplayName, message.Text, replyText, err)
 	}
+
 	replyMessage := &webexteams.MessageCreateRequest{
-		RoomID:        message.RoomID,
-		Markdown:      replyText,
+		RoomID:   message.RoomID,
+		Markdown: replyText,
 	}
 	_, resp, err := ac.teamsClient.Messages.CreateMessage(replyMessage)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to reply to message %s", message.ID))
 	}
 	log.Printf("Replied with %s, got http code %d, body %s", replyText, resp.StatusCode(), resp.Body())
+
 	if dmText != "" {
 		replyDmMessage := &webexteams.MessageCreateRequest{
 			ToPersonID:		person.ID,
-			Markdown:      replyText,
+			Markdown:      dmText,
 		}
 		_, resp, err := ac.teamsClient.Messages.CreateMessage(replyDmMessage)
 		if err != nil {
@@ -87,15 +96,16 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 	return "", nil
 }
 
-func (ac *Controller) handleCommand (message, displayName string) (string, string, error) {
+func (ac *Controller) handleCommand (message string, person *webexteams.Person) (string, string, error) {
 	message = strings.TrimPrefix(message, "BarcampGRBot")
 	message = strings.TrimPrefix(message, " ")
 	commandArray := strings.Split(message, " ")
+	displayName := person.DisplayName
 	switch strings.ToLower(commandArray[0]) {
 		case "schedule":
-			log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, displayName)
-			message, err := ac.parseAndScheduleTalk(displayName, commandArray[1:])
-			return message, "", err
+			log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, person.DisplayName)
+			message, dmMessage, err := ac.parseAndScheduleTalk(person, commandArray[1:])
+			return message, dmMessage, err
 		case "get":
 			if len(commandArray) < 2 {
 				return "", "", errors.New("the command `get` must have arguments, such as `get schedule`")
@@ -128,7 +138,7 @@ func (ac *Controller) handleCommand (message, displayName string) (string, strin
 	}
 }
 
-func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []string) (string, error) {
+func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArray []string) (string, string, error) {
 	var name string
 	var time string
 	var room string
@@ -138,7 +148,7 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 	// me at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
 
 	if strings.ToLower(commandArray[0]) == "me" {
-		name = displayName
+		name = person.DisplayName
 		currentArrayPos = 1
 		// skip 'at' command word
 	} else {
@@ -182,24 +192,27 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 	result := ac.sdb.Orm.Where("start = ?", time).Find(&timeObj)
 	if result.Error != nil {
 		log.Printf("Received error %s when trying to query for time starting at %s", result.Error, time)
-		return fmt.Sprintf("Unable to find a time starting at %s", time), result.Error
+		return fmt.Sprintf("Unable to find a time starting at %s", time), "", result.Error
 	}
 
 	var roomObj database.DBScheduleRoom
 	result = ac.sdb.Orm.Where("lower(name) = ?", strings.ToLower(room)).Find(&roomObj)
 	if result.Error != nil {
 		log.Printf("Received error %s when trying to query for room %s", result.Error, room)
-		return fmt.Sprintf("Unable to find a room named %s", room), result.Error
+		return fmt.Sprintf("Unable to find a room named %s", room), "", result.Error
 	}
 
 	session := database.DBScheduleSession{
 		Time:    &timeObj,
 		Room:    &roomObj,
-		Updater: displayName,
+		UpdaterName: person.DisplayName,
+		UpdaterID: person.ID,
 		Title:   title,
 		Speaker: name,
 		TimeID:  int(timeObj.ID),
 		RoomID:  int(roomObj.ID),
+		Version: 0,
+		UniqueString: ac.generateUniqueString(),
 	}
 
 	var sessionObj database.DBScheduleSession
@@ -208,20 +221,29 @@ func (ac *Controller) parseAndScheduleTalk(displayName string, commandArray []st
 			result = ac.sdb.Orm.Create(&session)
 			if result.Error != nil {
 				log.Printf("Received error %s when trying to create talk %s", result.Error, ac.commandArrayToString(commandArray))
-				return message, result.Error
+				return message, "", result.Error
 			} else {
 				log.Printf("Created talk %s with %d rows affected", ac.commandArrayToString(commandArray), result.RowsAffected)
 				message = fmt.Sprintf("I've scheduled your session %s", session.ToString())
-				return message, nil
+				dmMessage := fmt.Sprintf("Here I just scheduled this session for you: %s", session.ToDmString())
+				return message, dmMessage, nil
 			}
 		} else {
 			log.Printf("Received error %s when trying to create talk %s", result.Error, ac.commandArrayToString(commandArray))
-			return message, result.Error
+			return message, "", result.Error
 		}
 	}
 
 	log.Printf("Session already exists at %s in room %s.", session.Time.Start, session.Room.Name)
-	return fmt.Sprintf("I'm sorry, a session already exists at %s in room %s.", session.Time.Start, session.Room.Name), nil
+	return fmt.Sprintf("I'm sorry, a session already exists at %s in room %s.", session.Time.Start, session.Room.Name), "", nil
+}
+
+func (ac *Controller) generateUniqueString() string {
+	resultant := make([]byte, 64)
+	for i := range resultant {
+		resultant[i] = charset[ac.sRand.Intn(len(charset))]
+	}
+	return string(resultant)
 }
 
 func (ac *Controller) commandArrayToString(array []string) string {
