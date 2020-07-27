@@ -58,7 +58,7 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 		return "", nil
 	}
 	log.Printf("Got message from person.  Display: %s, Nick: %s, Name: %s %s", person.DisplayName, person.NickName, person.FirstName, person.LastName)
-	
+
 	room, _, err := ac.teamsClient.Rooms.GetRoom(message.RoomID)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to get room id %s", message.RoomID))
@@ -103,9 +103,14 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 	displayName := person.DisplayName
 	switch strings.ToLower(commandArray[0]) {
 		case "schedule":
-			log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, person.DisplayName)
-			message, dmMessage, err := ac.parseAndScheduleTalk(person, commandArray[1:])
-			return message, dmMessage, err
+			switch strings.ToLower(commandArray[1]) {
+			case "link":
+				return "", "", nil
+			default:
+				log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, person.DisplayName)
+				message, dmMessage, err := ac.parseAndScheduleTalk(person, commandArray[1:])
+				return message, dmMessage, err
+			}
 		case "get":
 			if len(commandArray) < 2 {
 				return "", "", errors.New("the command `get` must have arguments, such as `get schedule`")
@@ -146,6 +151,10 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	currentArrayPos := 0
 	message := ""
 	// me at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
+
+	if len(commandArray) < 8 {
+		return "You must provide all arguments for `schedule <person|me> at <time> in <room> for <title>`", "", nil
+	}
 
 	if strings.ToLower(commandArray[0]) == "me" {
 		name = person.DisplayName
