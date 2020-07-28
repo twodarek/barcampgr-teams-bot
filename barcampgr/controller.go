@@ -196,10 +196,10 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	title = strings.TrimPrefix(title, " ")
 
 	var timeObj database.DBScheduleTime
-	result := ac.sdb.Orm.Where("lower(start) = ?", strings.ToLower(time)).Find(&timeObj)
+	result := ac.sdb.Orm.Where("lower(start) = ? AND displayable = 1", strings.ToLower(time)).Find(&timeObj)
 	if result.Error != nil {
 		log.Printf("Received error %s when trying to query for time starting at %s", result.Error, time)
-		return fmt.Sprintf("Unable to find a time starting at %s", time), "", result.Error
+		return fmt.Sprintf("Unable to find a scheduleable time starting at %s", time), "", result.Error
 	}
 
 	var roomObj database.DBScheduleRoom
@@ -480,8 +480,10 @@ func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) []er
 		return resultErrors
 	}
 	for _, time := range times {
-		if err := ac.sdb.Orm.Where("start = ?", time.Start).First(&timeObj).Error; err != nil {
+		timeObj := database.DBScheduleTime{}
+		if err := ac.sdb.Orm.Where("start = ? AND day = ?", time.Start, time.Day).First(&timeObj).Error; err != nil {
 			if gorm.IsRecordNotFoundError(err){
+				log.Printf("Error in finding existing time for start %s on %s, error: %s", time.Start, time.Day, err)
 				timeObj = database.DBScheduleTime{
 					Day:         time.Day,
 					Start:       time.Start,
@@ -510,6 +512,9 @@ func (ac *Controller) MigrateDB() error {
 func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, room database.DBScheduleRoom) []ScheduleSession {
 	var resultant []ScheduleSession
 	for _,s := range sessions {
+		if s.Time == nil {
+			continue
+		}
 		if s.Time.Displayable && s.RoomID == int(room.ID) {
 			resultant = append(resultant, ScheduleSession{
 				Time:    int(s.Time.ID),
