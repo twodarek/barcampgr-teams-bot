@@ -453,7 +453,7 @@ func (ac *Controller) RollSchedule(scheduleBlock string) error  {
 }
 
 func (ac *Controller) confirmAndGenerateRooms() error {
-	rooms := [7]string{"Main Room", "120", "130", "140", "150", "160", "170"}
+	rooms := [7]string{"General", "2020", "Creative Corner", "Programming", "Room 120", "Room 140", "Room 170"}
 	for _, room := range rooms {
 		var roomObj database.DBScheduleRoom
 		result := ac.sdb.Orm.Where("name = ?", room).Find(roomObj)
@@ -472,7 +472,6 @@ func (ac *Controller) confirmAndGenerateRooms() error {
 }
 
 func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) []error {
-	//TODO(twodarek): Disable all displayable values in the table http://gorm.io/docs/update.html#Update-Changed-Fields
 	timeObj := database.DBScheduleTime{}
 	var resultErrors []error
 	result := ac.sdb.Orm.Model(&timeObj).Where("displayable = ?", true).Update("displayable", false)
@@ -495,7 +494,7 @@ func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) []er
 				}
 			}
 		}else{
-			result = ac.sdb.Orm.Model(&timeObj).Where("id = ?", time.ID).Update("displayable", true)
+			result = ac.sdb.Orm.Model(&timeObj).Where("id = ?", timeObj.ID).Update("displayable", true)
 			if result.Error != nil {
 				resultErrors = append(resultErrors, result.Error)
 			}
