@@ -40,6 +40,7 @@ func NewAppController(
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule` or `get grid` to get a link to the schedule grid\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test <MESSAGE>` to test this bot and echo something back to you"
 
 func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (string, error) {
 	message, _, err := ac.teamsClient.Messages.GetMessage(requestData.Data.ID)
@@ -134,9 +135,9 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 			log.Printf("DMping from %s", displayName)
 			return "Pong", "Pong", nil
 		case "help", "hi", "hi!", "hello", "hello!", "/help":
-			return fmt.Sprintf("Hi!  I'm BarCampGR's automation bot! I accept the following commands:\n - `help` to get this message\n - `get schedule` or `get grid` to get a link to the schedule grid\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test <MESSAGE>` to test this bot and echo something back to you"), "", nil
+			return fmt.Sprintf("Hi!  I'm BarCampGR's automation bot!  %s", help_message), "", nil
 		default:
-			return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
+			return fmt.Sprintf("Sorry, I don't know how to handle '%s'.  %s", ac.commandArrayToString(commandArray), help_message), "", nil
 	}
 }
 
@@ -349,16 +350,6 @@ func (ac *Controller) RollSchedule(scheduleBlock string) error  {
 	case "fri-pm":
 		var times []ScheduleTime
 		times = append(times, ScheduleTime{
-			Start: "5:00pm",
-			End:   "5:55pm",
-			Day:   "Friday",
-		})
-		times = append(times, ScheduleTime{
-			Start: "6:00pm",
-			End:   "6:25pm",
-			Day:   "Friday",
-		})
-		times = append(times, ScheduleTime{
 			Start: "6:30pm",
 			End:   "6:55pm",
 			Day:   "Friday",
@@ -383,15 +374,75 @@ func (ac *Controller) RollSchedule(scheduleBlock string) error  {
 			End:   "8:55pm",
 			Day:   "Friday",
 		})
+		times = append(times, ScheduleTime{
+			Start: "9:00pm",
+			End:   "9:25pm",
+			Day:   "Friday",
+		})
 		result := ac.createTimeBlockAndDisableOthers(times)
 		if len(result) < 0 {
 			return result[0]
 		}
 	case "sat-am":
 		var times []ScheduleTime
+		times = append(times, ScheduleTime{
+			Start: "10:00am",
+			End:   "10:25am",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "10:30am",
+			End:   "10:55am",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "11:00am",
+			End:   "11:25am",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "11:30am",
+			End:   "11:55am",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "12:00pm",
+			End:   "12:55pm",
+			Day:   "Saturday",
+		})
 		ac.createTimeBlockAndDisableOthers(times)
 	case "sat-pm":
 		var times []ScheduleTime
+		times = append(times, ScheduleTime{
+			Start: "1:00pm",
+			End:   "1:25pm",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "1:30pm",
+			End:   "1:55pm",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "2:00pm",
+			End:   "2:25pm",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "2:30pm",
+			End:   "2:55pm",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "3:00pm",
+			End:   "3:25pm",
+			Day:   "Saturday",
+		})
+		times = append(times, ScheduleTime{
+			Start: "3:30pm",
+			End:   "3:55pm",
+			Day:   "Saturday",
+		})
 		ac.createTimeBlockAndDisableOthers(times)
 	case "rooms":
 		return ac.confirmAndGenerateRooms()
