@@ -172,7 +172,7 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	// at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
 	// skip 'at' command word
 	currentArrayPos++
-	time = commandArray[currentArrayPos]
+	time = ac.standardizeTime(commandArray[currentArrayPos])
 	currentArrayPos++
 
 	// in The Hotdog Stand for Speaking to Bots, a Minecraft Story
@@ -537,4 +537,60 @@ func (ac *Controller) fillTimes(sessions []database.DBScheduleSession, times []d
 		}
 	}
 	return sessions
+}
+
+const outputTimeLayout = "3:04om"
+// My sincerest apologies for what you are about to read, time is messy and horrible.
+func (ac *Controller) standardizeTime(input string) string {
+	input = strings.ToLower(input)
+
+	//TODO(twodarek): THIS IS WRONG
+	splitTime, err := time.Parse(outputTimeLayout, "6:30")
+
+	timeOutput, err := time.Parse(outputTimeLayout, input)
+	if err == nil {
+		return timeOutput.String()
+	}
+	testable := strings.Replace(strings.Replace(input, "am", "", 1), "pm", "", 1)
+	if len(testable) == 3 {
+		input = fmt.Sprintf("%s:%s", input[:1], input[1:])
+		log.Printf("Look at this abomination: before: %s, after: %s", testable, input)
+	}
+	if len(testable) == 4 {
+		input = fmt.Sprintf("%s:%s", input[:2], input[2:])
+		log.Printf("Look at this abomination: before: %s, after: %s", testable, input)
+	}
+	timeOutput, err = time.Parse("3pm", input)
+	if err == nil {
+		return strings.Replace(timeOutput.Format(outputTimeLayout), "om", input[len(input)-2:], -1)
+	}
+	timeOutput, err = time.Parse("34pm", input)
+	if err == nil {
+		return timeOutput.Format(outputTimeLayout)
+	}
+	log.Printf("error log: %s", err)
+	timeOutput, err = time.Parse("3", input)
+	if err == nil {
+		if timeOutput.Before(splitTime) {
+			return strings.Replace(timeOutput.Format(outputTimeLayout), "om", "pm", -1)
+		} else if timeOutput.After(splitTime) {
+			return strings.Replace(timeOutput.Format(outputTimeLayout), "om", "am", -1)
+		} else {
+			log.Printf("You dun goofed")
+			return "12345"
+		}
+	}
+	timeOutput, err = time.Parse("3:4", input)
+	if err == nil {
+		if timeOutput.Before(splitTime) {
+			return strings.Replace(fmt.Sprintf("%spm", timeOutput.Format(outputTimeLayout)), "om", "", -1)
+		} else if timeOutput.After(splitTime) {
+			return strings.Replace(fmt.Sprintf("%sam", timeOutput.Format(outputTimeLayout)), "om", "", -1)
+		} else {
+			log.Printf("You dun goofed")
+			return "12345"
+		}
+	}
+	log.Printf("Time parsing failed, good luck!")
+	return input
 }
