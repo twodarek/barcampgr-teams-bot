@@ -22,6 +22,7 @@ func main() {
 
 	conf := barcampgr.Config{
 		APIToken: os.Getenv("CISCO_TEAMS_API_TOKEN"),
+		BarCampGRWebexId: os.Getenv("BARCAMPGR_WEBEX_ID"),
 		MySqlUser: os.Getenv("MYSQL_USER"),
 		MySqlPass: os.Getenv("MYSQL_PASS"),
 		MySqlServer: os.Getenv("MYSQL_SERVER"),

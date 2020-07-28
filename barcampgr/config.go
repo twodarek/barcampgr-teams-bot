@@ -2,6 +2,7 @@ package barcampgr
 
 type Config struct {
 	APIToken string
+	BarCampGRWebexId string
 	MySqlUser string
 	MySqlPass string
 	MySqlServer string
@@ -14,6 +15,7 @@ type Config struct {
 
 func New(
 	apiToken string,
+	barCampGRWebexId string,
 	mySqlUser string,
 	mySqlPass string,
 	mySqlServer string,
@@ -25,6 +27,7 @@ func New(
 ) *Config {
 	c := &Config{
 		APIToken: apiToken,
+		BarCampGRWebexId: barCampGRWebexId,
 		MySqlUser: mySqlUser,
 		MySqlPass: mySqlPass,
 		MySqlServer: mySqlServer,

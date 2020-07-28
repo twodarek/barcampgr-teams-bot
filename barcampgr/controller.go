@@ -1,7 +1,6 @@
 package barcampgr
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
@@ -53,7 +52,7 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to get person id %s", message.PersonID))
 	}
-	if person.ID == "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9lYTZhNWVlOC02Y2VjLTQxNzUtYjk5Mi03NGZhMzcwMmU2ZDc" {
+	if person.ID == ac.config.BarCampGRWebexId {
 		log.Printf("Rejecting message from myself, returning cleanly")
 		return "", nil
 	}
@@ -116,28 +115,26 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 				return "", "", errors.New("the command `get` must have arguments, such as `get schedule`")
 			}
 			switch strings.ToLower(commandArray[1]) {
-			case "schedule":
-				schedule, err := ac.GetScheduleJson()
-				bytes, err := json.Marshal(schedule)
-				if err != nil {
-					log.Println("Can't serialize", bytes)
-				}
-
-				return fmt.Sprintf("%v => %v, '%v'\n", schedule, bytes, string(bytes)), "", err
+			case "schedule", "talks", "grid":
+				log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
+				return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/scheduleView.html"), "", nil
 			default:
 				return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
 			}
 		case "test":
 			log.Printf("Test message %s, commandArray %s", message, commandArray)
 			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), "", nil
+		case "talks", "talk", "grid":
+			log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
+			return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/scheduleView.html"), "", nil
 		case "ping":
 			log.Printf("Ping from %s", displayName)
 			return "Pong", "", nil
-		case "dmping":
+		case "dmping", "dm":
 			log.Printf("DMping from %s", displayName)
 			return "Pong", "Pong", nil
-		case "help":
-			return fmt.Sprintf("I accept the following commands:\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test MESSAGE_TO_ECHO` to test this bot\n - `help` to get this message"), "", nil
+		case "help", "hi", "hi!", "hello", "hello!", "/help":
+			return fmt.Sprintf("Hi!  I'm BarCampGR's automation bot! I accept the following commands:\n - `help` to get this message\n - `get schedule` or `get grid` to get a link to the schedule grid\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test <MESSAGE>` to test this bot and echo something back to you"), "", nil
 		default:
 			return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
 	}
@@ -152,7 +149,7 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	message := ""
 	// me at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
 
-	if len(commandArray) < 8 {
+	if len(commandArray) < 7 {
 		return "You must provide all arguments for `schedule <person|me> at <time> in <room> for <title>`", "", nil
 	}
 
@@ -198,7 +195,7 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	title = strings.TrimPrefix(title, " ")
 
 	var timeObj database.DBScheduleTime
-	result := ac.sdb.Orm.Where("start = ?", time).Find(&timeObj)
+	result := ac.sdb.Orm.Where("lower(start) = ?", strings.ToLower(time)).Find(&timeObj)
 	if result.Error != nil {
 		log.Printf("Received error %s when trying to query for time starting at %s", result.Error, time)
 		return fmt.Sprintf("Unable to find a time starting at %s", time), "", result.Error
