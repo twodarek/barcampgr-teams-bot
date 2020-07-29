@@ -118,7 +118,7 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 			switch strings.ToLower(commandArray[1]) {
 			case "schedule", "talks", "grid":
 				log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
-				return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/scheduleView.html"), "", nil
+				return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/"), "", nil
 			default:
 				return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
 			}
@@ -127,7 +127,7 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), "", nil
 		case "talks", "talk", "grid":
 			log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
-			return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/scheduleView.html"), "", nil
+			return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/"), "", nil
 		case "ping":
 			log.Printf("Ping from %s", displayName)
 			return "Pong", "", nil
@@ -544,8 +544,7 @@ const outputTimeLayout = "3:04om"
 func (ac *Controller) standardizeTime(input string) string {
 	input = strings.ToLower(input)
 
-	//TODO(twodarek): THIS IS WRONG
-	splitTime, err := time.Parse(outputTimeLayout, "6:30")
+	splitTime, err := time.Parse(outputTimeLayout, "9:01")
 
 	timeOutput, err := time.Parse(outputTimeLayout, input)
 	if err == nil {
