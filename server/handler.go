@@ -58,6 +58,32 @@ func (ah *AppHandler) GetScheduleJson(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func (ah *AppHandler) GetSessionJson(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	if vars["session_str"] != "" {
+		session, err := ah.AppController.GetSessionByStr(vars["session_str"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		sessionJson, err := json.Marshal(session)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(sessionJson)
+		return
+	}
+	w.Write([]byte("{}"))
+}
+
+func (ah *AppHandler) UpdateSessionJson(w http.ResponseWriter, r *http.Request) {
+	//TODO(twodarek) Implement this
+	w.Write([]byte("{}"))
+}
+
 func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if vars["password"] != "" {

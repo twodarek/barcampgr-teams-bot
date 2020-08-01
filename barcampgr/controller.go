@@ -118,7 +118,7 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 			switch strings.ToLower(commandArray[1]) {
 			case "schedule", "talks", "grid":
 				log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
-				return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/"), "", nil
+				return fmt.Sprintf("The talk grid can be found at https://talks.barcmpgr.org/"), "", nil
 			default:
 				return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
 			}
@@ -127,7 +127,7 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 			return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), "", nil
 		case "talks", "talk", "grid":
 			log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
-			return fmt.Sprintf("The talk grid can be found at https://talks.twodarek.dev/"), "", nil
+			return fmt.Sprintf("The talk grid can be found at https://talks.barcampgr.org/"), "", nil
 		case "ping":
 			log.Printf("Ping from %s", displayName)
 			return "Pong", "", nil
@@ -293,15 +293,30 @@ func (ac *Controller) GetScheduleJson() (Schedule, error) {
 	return schedule, nil
 }
 
+func (ac *Controller) GetSessionByStr(sessionStr string) (ScheduleSession, error) {
+	var session database.DBScheduleSession
+	result := ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&session)
+	if result.Error != nil {
+		return ScheduleSession{}, result.Error
+	}
+	return ac.convertSession(session), nil
+}
+
 func (ac *Controller) GetTimesJson() ([]ScheduleTime, error) {
 	var times []database.DBScheduleTime
-	ac.sdb.Orm.Find(&times)
+	results := ac.sdb.Orm.Where("displayable = 1").Order("start").Find(&times)
+	if results.Error != nil {
+		return []ScheduleTime{}, results.Error
+	}
 	return ac.convertTimes(times), nil
 }
 
 func (ac *Controller) GetRoomsJson() ([]ScheduleRoom, error) {
 	var rooms []database.DBScheduleRoom
-	ac.sdb.Orm.Find(&rooms)
+	results := ac.sdb.Orm.Order("name").Find(&rooms)
+	if results.Error != nil {
+		return []ScheduleRoom{}, results.Error
+	}
 	return ac.convertRooms(rooms), nil
 }
 
@@ -330,6 +345,17 @@ func (ac *Controller) convertRooms(rooms []database.DBScheduleRoom) []ScheduleRo
 		})
 	}
 	return resultant
+}
+
+func (ac *Controller) convertSession(session database.DBScheduleSession) ScheduleSession {
+	return ScheduleSession{
+		Time:         session.TimeID,
+		Room:         session.RoomID,
+		Title:        session.Title,
+		Speaker:      session.Speaker,
+		UniqueString: session.UniqueString,
+		Version:      session.Version,
+	}
 }
 
 func (ac *Controller) buildRows(sessions []database.DBScheduleSession, rooms []database.DBScheduleRoom) []ScheduleRow {

@@ -1,11 +1,39 @@
 <html>
 <head>
 
-<title>Edit</title>
+    <title>Edit/Delete a Talk</title>
+
+    <script type="text/javascript" src="actions.js"></script>
 
 </head>
 <body>
-Hi
+    <div id="main">
+        <form id="edit-form" method="post" enctype="multipart/form-data">
+            <h2>Edit your Talk</h2>
+
+            <label>Title:
+                <input type="text" name="title" id="title">
+            </label>
+            <br/>
+            <label>Speaker:
+                <input type="text" name="speaker" id="speaker" size=50>
+            </label>
+            <br/>
+            <label>Room:
+                <select name="room" id="roomSelector">
+                    <option value="null">-select a room-</option>
+                </select>
+            </label>
+            <br/>
+            <label>Time:
+                <select name="time" id="timeSelector">
+                    <option value="null">-select a time-</option>
+                </select>
+            </label>
+            <br/>
+            <button id="save-button" name="save-button" value="Save">Save</button>
+        </form>
+    </div>
 </body>
 </html>
 
