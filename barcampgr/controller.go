@@ -576,7 +576,7 @@ func (ac *Controller) standardizeTime(input string) string {
 			return strings.Replace(timeOutput.Format(outputTimeLayout), "om", "am", -1)
 		} else {
 			log.Printf("You dun goofed")
-			return "12345"
+			return input
 		}
 	}
 	timeOutput, err = time.Parse("3:4", input)
@@ -587,9 +587,9 @@ func (ac *Controller) standardizeTime(input string) string {
 			return strings.Replace(fmt.Sprintf("%sam", timeOutput.Format(outputTimeLayout)), "om", "", -1)
 		} else {
 			log.Printf("You dun goofed")
-			return "12345"
+			return input
 		}
 	}
-	log.Printf("Time parsing failed, good luck!")
+	log.Printf("Time parsing failed, good luck!  Input: %s", input)
 	return input
 }
