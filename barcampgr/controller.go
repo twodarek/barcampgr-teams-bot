@@ -590,11 +590,11 @@ func (ac *Controller) standardizeTime(input string) string {
 		return timeOutput.String()
 	}
 	testable := strings.Replace(strings.Replace(input, "am", "", 1), "pm", "", 1)
-	if len(testable) == 3 {
+	if len(testable) == 3 && !strings.Contains(input, ":") {
 		input = fmt.Sprintf("%s:%s", input[:1], input[1:])
 		log.Printf("Look at this abomination: before: %s, after: %s", testable, input)
 	}
-	if len(testable) == 4 {
+	if len(testable) == 4 && !strings.Contains(input, ":"){
 		input = fmt.Sprintf("%s:%s", input[:2], input[2:])
 		log.Printf("Look at this abomination: before: %s, after: %s", testable, input)
 	}
@@ -690,4 +690,8 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 		return errors.New("Sorry, a session already is scheduled for that time and room.  Please select an available slot.")
 	}
 	return errors.New("Previous session not found to update.")
+}
+
+func (ac *Controller) DeleteSession(sessionStr string) error {
+	return ac.sdb.Orm.Where("unique_string = ?", sessionStr).Delete(database.DBScheduleSession{}).Error
 }

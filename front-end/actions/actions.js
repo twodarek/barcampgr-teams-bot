@@ -1,5 +1,6 @@
 function loadPage() {
     var sessionStr = getParameterByName('unique_str');
+    window.sessionStr = sessionStr;
     var callUrl = "/api/v1/session/"+sessionStr;
     httpGetAsync(callUrl, loadSession);
 }
@@ -17,19 +18,20 @@ function loadSession(res) {
 
 
     var timesUrl = "/api/v1/times";
-    httpGetAsync(timesUrl, loadTimes);
+    httpAsync("GET", timesUrl, loadTimes, loadTimes, null)
 
     var roomsUrl = "/api/v1/rooms";
-    httpGetAsync(roomsUrl, loadRooms);
+    httpAsync("GET", roomsUrl, loadRooms, loadRooms, null)
 
     document.getElementById("save-button").addEventListener("click", updateSession)
+    document.getElementById("delete-button").addEventListener("click", deleteSession)
 }
 
 function loadTimes(res) {
-    var timesData = JSON.parse(res);
-    if (timesData == {}) {
+    if (res === "{}" || res === "") {
         return
     }
+    var timesData = JSON.parse(res);
     var selector = document.getElementById('timeSelector')
 
     timesData.forEach(function(time) {
@@ -45,10 +47,10 @@ function loadTimes(res) {
 }
 
 function loadRooms(res) {
-    var roomsData = JSON.parse(res);
-    if (roomsData == {}) {
+    if (res === "{}" || res === "") {
         return
     }
+    var roomsData = JSON.parse(res);
     var selector = document.getElementById('roomSelector')
 
     roomsData.forEach(function(room) {
@@ -92,15 +94,31 @@ function updateSession(e) {
     }
 
     if (updated) {
-        var sessionStr = getParameterByName('unique_str');
-        var postUrl = "/api/v1/session/" + sessionStr
-        httpPostAsync(postUrl, updateSuccessful, updateFailed, JSON.stringify(sessionData));
+        var postUrl = "/api/v1/session/" + window.sessionStr
+        httpAsync("POST", postUrl, updateSuccessful, updateFailed, JSON.stringify(sessionData));
     } else {
         alert("No changes to save")
     }
 }
 
-function updateSuccessful() {
+function deleteSession(e) {
+    var result = confirm("Are you sure you want to delete your talk?");
+    if (result) {
+        var deleteUrl = "/api/v1/session/" + window.sessionStr
+        httpAsync("DELETE", deleteUrl, deleteSuccessful, deleteFailed, null);
+    }
+}
+
+function deleteSuccessful(response) {
+    alert("Delete successful");
+    window.location.href = "https://talks.barcampgr.org/"
+}
+
+function deleteFailed(response) {
+    alert("Delete Failed because "+response);
+}
+
+function updateSuccessful(response) {
     alert("Update successful");
     window.location.href = "https://talks.barcampgr.org/"
 }
@@ -120,19 +138,19 @@ function httpGetAsync(theUrl, callback) {
     xmlHttp.send(null);
 }
 
-function httpPostAsync(theUrl, successCallback, failCallback, body) {
+function httpAsync(httpMethod, theUrl, successCallback, failCallback, body) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function() {
         if(xmlHttp.readyState === XMLHttpRequest.DONE) {
             var status = xmlHttp.status;
             if (status === 0 || (status >= 200 && status < 400)) {
-                successCallback();
+                successCallback(xmlHttp.responseText);
             } else {
                 failCallback(xmlHttp.responseText);
             }
         }
     }
-    xmlHttp.open("POST", theUrl, true);
+    xmlHttp.open(httpMethod, theUrl, true);
     xmlHttp.send(body);
 }
 

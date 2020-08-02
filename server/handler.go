@@ -58,7 +58,7 @@ func (ah *AppHandler) GetScheduleJson(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func (ah *AppHandler) GetSessionJson(w http.ResponseWriter, r *http.Request) {
+func (ah *AppHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if vars["session_str"] != "" {
 		session, err := ah.AppController.GetSessionByStr(vars["session_str"])
@@ -82,7 +82,7 @@ func (ah *AppHandler) GetSessionJson(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("{}"))
 }
 
-func (ah *AppHandler) UpdateSessionJson(w http.ResponseWriter, r *http.Request) {
+func (ah *AppHandler) UpdateSession(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if vars["session_str"] != "" {
 		sessionStr := vars["session_str"]
@@ -102,6 +102,21 @@ func (ah *AppHandler) UpdateSessionJson(w http.ResponseWriter, r *http.Request) 
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
+}
+
+func (ah *AppHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	if vars["session_str"] != "" {
+		sessionStr := vars["session_str"]
+		err := ah.AppController.DeleteSession(sessionStr)
+		if err != nil {
+			log.Printf("Unable to delete session %s because %s", sessionStr, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		http.Error(w, "Session not found", http.StatusNotFound)
+	}
 }
 
 func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {
