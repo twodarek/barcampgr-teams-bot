@@ -81,19 +81,23 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 	log.Printf("Replied with %s, got http code %d, body %s", replyText, resp.StatusCode(), resp.Body())
 
 	if dmText != "" {
-		replyDmMessage := &webexteams.MessageCreateRequest{
-			ToPersonID:		person.ID,
-			Markdown:      dmText,
-		}
-		_, resp, err := ac.teamsClient.Messages.CreateMessage(replyDmMessage)
+		err = ac.sendDM(person.ID, dmText)
 		if err != nil {
 			return "", errors.New(fmt.Sprintf("Unable to send dm reply to message %s", message.ID))
 		}
-		log.Printf("Attempted to DM with %s, got http code %d, body %s", replyText, resp.StatusCode(), resp.Body())
 	}
 
-
 	return "", nil
+}
+
+func (ac *Controller) sendDM(personID, message string) error {
+	replyDmMessage := &webexteams.MessageCreateRequest{
+		ToPersonID:		personID,
+		Markdown:      message,
+	}
+	_, resp, err := ac.teamsClient.Messages.CreateMessage(replyDmMessage)
+	log.Printf("Attempted to DM with %s, got http code %d, body %s", message, resp.StatusCode(), resp.Body())
+	return err
 }
 
 func (ac *Controller) handleCommand (message string, person *webexteams.Person) (string, string, error) {
@@ -551,6 +555,18 @@ func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, r
 	return resultant
 }
 
+func (ac *Controller) fillTime(session *database.DBScheduleSession) {
+	time := database.DBScheduleTime{}
+	ac.sdb.Orm.Where("id = ?", session.TimeID).Find(&time)
+	session.Time = &time
+}
+
+func (ac *Controller) fillRoom(session *database.DBScheduleSession) {
+	room := database.DBScheduleRoom{}
+	ac.sdb.Orm.Where("id = ?", session.RoomID).Find(&room)
+	session.Room = &room
+}
+
 func (ac *Controller) fillTimes(sessions []database.DBScheduleSession, times []database.DBScheduleTime) []database.DBScheduleSession {
 	for i, s := range sessions {
 		for j, t := range times {
@@ -661,6 +677,9 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 					return result.Error
 				} else {
 					log.Printf("Updated talk %s from %s with %d rows affected", newSession.UniqueString, sessionObj.UniqueString, result.RowsAffected)
+					ac.fillTime(&newSession)
+					ac.fillRoom(&newSession)
+					ac.sendDM(newSession.UpdaterID, fmt.Sprintf(fmt.Sprintf("I've scheduled your session %s", newSession.ToDmString())))
 					return nil
 				}
 			} else {

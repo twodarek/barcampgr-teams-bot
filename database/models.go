@@ -39,5 +39,5 @@ func (s DBScheduleSession) ToString() string {
 }
 
 func (s DBScheduleSession) ToDmString() string {
-	return fmt.Sprintf("Title: %s, Speaker: %s, Start Time: %s, Room: %s, Edit/Delete link: https://talks.barcampgr.org/talks/%s", s.Title, s.Speaker, s.Time.Start, s.Room.Name, s.UniqueString)
+	return fmt.Sprintf("Title: %s, Speaker: %s, Start Time: %s, Room: %s, Edit/Delete link: https://talks.barcampgr.org/actions/?unique_str=%s", s.Title, s.Speaker, s.Time.Start, s.Room.Name, s.UniqueString)
 }
