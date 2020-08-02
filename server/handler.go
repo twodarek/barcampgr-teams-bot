@@ -66,12 +66,15 @@ func (ah *AppHandler) GetSessionJson(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		if session.UniqueString == "" {
+			w.Write([]byte("{}"))
+			return
+		}
 		sessionJson, err := json.Marshal(session)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(sessionJson)
 		return
@@ -80,8 +83,21 @@ func (ah *AppHandler) GetSessionJson(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ah *AppHandler) UpdateSessionJson(w http.ResponseWriter, r *http.Request) {
-	//TODO(twodarek) Implement this
-	w.Write([]byte("{}"))
+	vars := mux.Vars(r)
+	if vars["session_str"] != "" {
+		requestData := barcampgr.ScheduleSession{}
+		err := json.NewDecoder(r.Body).Decode(&requestData)
+		if err != nil {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+		err = ah.AppController.UpdateSession(vars["session_str"], requestData)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {

@@ -279,7 +279,7 @@ func (ac *Controller) GetScheduleJson() (Schedule, error) {
 	outTimes := ac.convertTimes(times)
 
 	ac.sdb.Orm.Find(&rooms)
-	ac.sdb.Orm.Find(&sessions)
+	ac.sdb.Orm.Where("out_dated = 0").Find(&sessions)
 	sessions = ac.fillTimes(sessions, times)
 	outRows := ac.buildRows(sessions, rooms)
 
@@ -295,10 +295,7 @@ func (ac *Controller) GetScheduleJson() (Schedule, error) {
 
 func (ac *Controller) GetSessionByStr(sessionStr string) (ScheduleSession, error) {
 	var session database.DBScheduleSession
-	result := ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&session)
-	if result.Error != nil {
-		return ScheduleSession{}, result.Error
-	}
+	ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&session)
 	return ac.convertSession(session), nil
 }
 
@@ -618,4 +615,62 @@ func (ac *Controller) standardizeTime(input string) string {
 	}
 	log.Printf("Time parsing failed, good luck!  Input: %s", input)
 	return input
+}
+
+func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSession) error {
+	sessionObj := database.DBScheduleSession{}
+	ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&sessionObj)
+	updated := false
+	if sessionObj.Speaker != sessionInbound.Speaker {
+		updated = true
+	}
+	if sessionObj.Title != sessionInbound.Title {
+		updated = true
+	}
+	if sessionObj.RoomID != sessionInbound.Room {
+		updated = true
+	}
+	if sessionObj.TimeID != sessionInbound.Time {
+		updated = true
+	}
+	if updated {
+		newSession := database.DBScheduleSession{
+			Model:        gorm.Model{},
+			Time:         nil,
+			Room:         nil,
+			RoomID:       sessionInbound.Room,
+			TimeID:       sessionInbound.Time,
+			UpdaterName:  sessionObj.UpdaterName,
+			UpdaterID:    sessionObj.UpdaterID,
+			Title:        sessionInbound.Title,
+			Speaker:      sessionInbound.Speaker,
+			UniqueString: ac.generateUniqueString(),
+			Version:      sessionObj.Version + 1,
+			OutDated:     false,
+		}
+
+		sessionTest := database.DBScheduleSession{}
+		if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ?", sessionInbound.Room, sessionInbound.Time).First(&sessionTest).Error; err != nil {
+			if gorm.IsRecordNotFoundError(err){
+				sessionObj.OutDated = true
+				result := ac.sdb.Orm.Save(sessionObj)
+				if result.Error != nil {
+					return result.Error
+				}
+				result = ac.sdb.Orm.Create(newSession)
+				if result.Error != nil {
+					log.Printf("Received error %s when trying to update talk %s from %s", result.Error, sessionInbound.UniqueString, sessionObj.UniqueString)
+					return result.Error
+				} else {
+					log.Printf("Updated talk %s from %s with %d rows affected", newSession.UniqueString, sessionObj.UniqueString, result.RowsAffected)
+					return nil
+				}
+			} else {
+				log.Printf("Received error %s when trying to update talk %s from %s", err, newSession.UniqueString, sessionObj.UniqueString)
+				return err
+			}
+		}
+		return errors.New("Sorry, a session already is scheduled for that time and room.  Please select an available slot.")
+	}
+	return errors.New("Previous session not found to update.")
 }

@@ -30,6 +30,7 @@ type DBScheduleSession struct {
 	Speaker string
 	UniqueString string `gorm:"unique;type:string"`
 	Version int `gorm:"not null;default:0"`
+	OutDated bool `gorm:"not null;default:false"`
 }
 
 func (s DBScheduleSession) ToString() string {

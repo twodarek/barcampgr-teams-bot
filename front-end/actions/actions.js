@@ -5,12 +5,12 @@ function loadPage() {
 }
 
 function loadSession(res) {
-    var sessionData = JSON.parse(res);
-    console.log(sessionData);
-    if (sessionData == {}) {
+    if (res === "{}") {
         document.getElementById('main').align = 'center';
         document.getElementById('main').innerText = "Session Not Found";
+        return
     }
+    var sessionData = JSON.parse(res);
     document.getElementById('title').value = sessionData.title;
     document.getElementById('speaker').value = sessionData.speaker;
     window.sessionData = sessionData
