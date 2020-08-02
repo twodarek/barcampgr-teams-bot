@@ -645,6 +645,7 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 			Title:        sessionInbound.Title,
 			Speaker:      sessionInbound.Speaker,
 			UniqueString: ac.generateUniqueString(),
+			PreviousUniqueString: sessionObj.UniqueString,
 			Version:      sessionObj.Version + 1,
 			OutDated:     false,
 		}

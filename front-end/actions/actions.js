@@ -21,6 +21,8 @@ function loadSession(res) {
 
     var roomsUrl = "/api/v1/rooms";
     httpGetAsync(roomsUrl, loadRooms);
+
+    document.getElementById("save-button").addEventListener("click", updateSession)
 }
 
 function loadTimes(res) {
@@ -61,6 +63,33 @@ function loadRooms(res) {
     })
 }
 
+function eatSubmit(e) {
+    e.preventDefault();
+}
+
+function updateSession(e) {
+    var sessionData = window.sessionData;
+    sessionData.title = document.getElementById('title').value;
+    sessionData.speaker = document.getElementById('speaker').value;
+    var roomSelector = document.getElementById('roomSelector')
+    sessionData.room = roomSelector.options[roomSelector.selectedIndex].value;
+    var timeSelector = document.getElementById('timeSelector')
+    sessionData.time = timeSelector.options[timeSelector.selectedIndex].value;
+
+    var sessionStr = getParameterByName('unique_str');
+    var postUrl = "/api/v1/session/" + sessionStr
+    httpPostAsync(postUrl, updateSuccessful, updateFailed, JSON.stringify(sessionData));
+}
+
+function updateSuccessful() {
+    alert("Update successful");
+    window.location.href = "https://talks.barcampgr.org/"
+}
+
+function updateFailed(response) {
+    alert("Update Failed because "+response);
+}
+
 // https://stackoverflow.com/questions/247483/http-get-request-in-javascript
 function httpGetAsync(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();
@@ -70,6 +99,22 @@ function httpGetAsync(theUrl, callback) {
     }
     xmlHttp.open("GET", theUrl, true); // true for asynchronous
     xmlHttp.send(null);
+}
+
+function httpPostAsync(theUrl, successCallback, failCallback, body) {
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() {
+        if(xhr.readyState === XMLHttpRequest.DONE) {
+            var status = xhr.status;
+            if (status === 0 || (status >= 200 && status < 400)) {
+                successCallback();
+            } else {
+                failCallback(xmlHttp.responseText);
+            }
+        }
+    }
+    xmlHttp.open("POST", theUrl, true);
+    xmlHttp.send(body);
 }
 
 

@@ -29,6 +29,7 @@ type DBScheduleSession struct {
 	Title string
 	Speaker string
 	UniqueString string `gorm:"unique;type:string"`
+	PreviousUniqueString string
 	Version int `gorm:"not null;default:0"`
 	OutDated bool `gorm:"not null;default:false"`
 }
