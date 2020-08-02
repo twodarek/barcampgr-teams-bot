@@ -64,21 +64,40 @@ function loadRooms(res) {
 }
 
 function eatSubmit(e) {
+    console.log("running")
     e.preventDefault();
+    return false
 }
 
 function updateSession(e) {
     var sessionData = window.sessionData;
-    sessionData.title = document.getElementById('title').value;
-    sessionData.speaker = document.getElementById('speaker').value;
+    var updated = false;
+    if (sessionData.title !== document.getElementById('title').value) {
+        sessionData.title = document.getElementById('title').value;
+        updated = true;
+    }
+    if (sessionData.speaker !== document.getElementById('speaker').value) {
+        sessionData.speaker = document.getElementById('speaker').value;
+        updated = true;
+    }
     var roomSelector = document.getElementById('roomSelector')
-    sessionData.room = roomSelector.options[roomSelector.selectedIndex].value;
+    if (sessionData.room !== roomSelector.options[roomSelector.selectedIndex].value) {
+        sessionData.room = roomSelector.options[roomSelector.selectedIndex].value;
+        updated = true;
+    }
     var timeSelector = document.getElementById('timeSelector')
-    sessionData.time = timeSelector.options[timeSelector.selectedIndex].value;
+    if (sessionData.time !== timeSelector.options[timeSelector.selectedIndex].value) {
+        sessionData.time = timeSelector.options[timeSelector.selectedIndex].value;
+        updated = true
+    }
 
-    var sessionStr = getParameterByName('unique_str');
-    var postUrl = "/api/v1/session/" + sessionStr
-    httpPostAsync(postUrl, updateSuccessful, updateFailed, JSON.stringify(sessionData));
+    if (updated) {
+        var sessionStr = getParameterByName('unique_str');
+        var postUrl = "/api/v1/session/" + sessionStr
+        httpPostAsync(postUrl, updateSuccessful, updateFailed, JSON.stringify(sessionData));
+    } else {
+        alert("No changes to save")
+    }
 }
 
 function updateSuccessful() {
@@ -104,8 +123,8 @@ function httpGetAsync(theUrl, callback) {
 function httpPostAsync(theUrl, successCallback, failCallback, body) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function() {
-        if(xhr.readyState === XMLHttpRequest.DONE) {
-            var status = xhr.status;
+        if(xmlHttp.readyState === XMLHttpRequest.DONE) {
+            var status = xmlHttp.status;
             if (status === 0 || (status >= 200 && status < 400)) {
                 successCallback();
             } else {

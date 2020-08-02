@@ -223,7 +223,7 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	}
 
 	var sessionObj database.DBScheduleSession
-	if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ?", session.RoomID, session.TimeID).First(&sessionObj).Error; err != nil {
+	if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ? AND out_dated = 0", session.RoomID, session.TimeID).First(&sessionObj).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err){
 			result = ac.sdb.Orm.Create(&session)
 			if result.Error != nil {
@@ -295,7 +295,7 @@ func (ac *Controller) GetScheduleJson() (Schedule, error) {
 
 func (ac *Controller) GetSessionByStr(sessionStr string) (ScheduleSession, error) {
 	var session database.DBScheduleSession
-	ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&session)
+	ac.sdb.Orm.Where("unique_string = ? AND out_dated = 0", sessionStr).Find(&session)
 	return ac.convertSession(session), nil
 }
 
@@ -619,7 +619,7 @@ func (ac *Controller) standardizeTime(input string) string {
 
 func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSession) error {
 	sessionObj := database.DBScheduleSession{}
-	ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&sessionObj)
+	ac.sdb.Orm.Where("unique_string = ? AND out_dated = 0", sessionStr).Find(&sessionObj)
 	updated := false
 	if sessionObj.Speaker != sessionInbound.Speaker {
 		updated = true
@@ -635,9 +635,6 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 	}
 	if updated {
 		newSession := database.DBScheduleSession{
-			Model:        gorm.Model{},
-			Time:         nil,
-			Room:         nil,
 			RoomID:       sessionInbound.Room,
 			TimeID:       sessionInbound.Time,
 			UpdaterName:  sessionObj.UpdaterName,
@@ -651,14 +648,14 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 		}
 
 		sessionTest := database.DBScheduleSession{}
-		if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ?", sessionInbound.Room, sessionInbound.Time).First(&sessionTest).Error; err != nil {
+		if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ? AND out_dated = 0", sessionInbound.Room, sessionInbound.Time).First(&sessionTest).Error; err != nil {
 			if gorm.IsRecordNotFoundError(err){
 				sessionObj.OutDated = true
-				result := ac.sdb.Orm.Save(sessionObj)
+				result := ac.sdb.Orm.Save(&sessionObj)
 				if result.Error != nil {
 					return result.Error
 				}
-				result = ac.sdb.Orm.Create(newSession)
+				result = ac.sdb.Orm.Create(&newSession)
 				if result.Error != nil {
 					log.Printf("Received error %s when trying to update talk %s from %s", result.Error, sessionInbound.UniqueString, sessionObj.UniqueString)
 					return result.Error

@@ -85,19 +85,23 @@ func (ah *AppHandler) GetSessionJson(w http.ResponseWriter, r *http.Request) {
 func (ah *AppHandler) UpdateSessionJson(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	if vars["session_str"] != "" {
+		sessionStr := vars["session_str"]
 		requestData := barcampgr.ScheduleSession{}
 		err := json.NewDecoder(r.Body).Decode(&requestData)
 		if err != nil {
-			http.Error(w, "Bad Request", http.StatusBadRequest)
+			log.Printf("Unable to decode the POST from update session %s because %s", sessionStr, err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		err = ah.AppController.UpdateSession(vars["session_str"], requestData)
+		err = ah.AppController.UpdateSession(sessionStr, requestData)
 		if err != nil {
+			log.Printf("Unable to update session %s because %s", sessionStr, err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 func (ah *AppHandler) MigrateDatabase(w http.ResponseWriter, r *http.Request) {
