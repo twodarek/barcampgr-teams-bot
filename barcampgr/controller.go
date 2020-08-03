@@ -250,11 +250,28 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 }
 
 func (ac *Controller) generateUniqueString() string {
-	resultant := make([]byte, 64)
-	for i := range resultant {
-		resultant[i] = charset[ac.sRand.Intn(len(charset))]
+	for i := 0; i < 10; i++ {
+		resultant := make([]byte, 64)
+		for i := range resultant {
+			resultant[i] = charset[ac.sRand.Intn(len(charset))]
+		}
+		resultStr := string(resultant)
+		if ac.sessionStrNotUsed(resultStr) {
+			return resultStr
+		}
 	}
-	return string(resultant)
+	return ""
+}
+
+func (ac *Controller) sessionStrNotUsed (sessionStr string) bool {
+	session := database.DBScheduleSession{}
+	result := ac.sdb.Orm.Where("unique_str = ?", sessionStr).Find(&session)
+	if result.Error != nil {
+		if gorm.IsRecordNotFoundError(result.Error){
+			return true
+		}
+	}
+	return false
 }
 
 func (ac *Controller) commandArrayToString(array []string) string {
