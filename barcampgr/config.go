@@ -1,5 +1,7 @@
 package barcampgr
 
+import "strings"
+
 type Config struct {
 	APIToken string
 	BarCampGRWebexId string
@@ -11,6 +13,8 @@ type Config struct {
 	AdminPassword string
 	WebexRoomID string
 	WebexCallbackURL string
+	WebexMembershipCallbackURL string
+	WebexAllRooms []string
 }
 
 func New(
@@ -24,6 +28,8 @@ func New(
 	adminPassword string,
 	webexRoomID string,
 	webexCallbackURL string,
+	webexMembershipCallbackURL string,
+	webexAllRooms []string,
 ) *Config {
 	c := &Config{
 		APIToken: apiToken,
@@ -36,6 +42,12 @@ func New(
 		AdminPassword: adminPassword,
 		WebexRoomID: webexRoomID,
 		WebexCallbackURL: webexCallbackURL,
+		WebexMembershipCallbackURL: webexMembershipCallbackURL,
+		WebexAllRooms: webexAllRooms,
 	}
 	return c
+}
+
+func (c *Config) SetWebexAllRooms(input string) {
+	c.WebexAllRooms = strings.Split(input, ":")
 }

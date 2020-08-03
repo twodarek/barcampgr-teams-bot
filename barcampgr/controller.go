@@ -100,6 +100,30 @@ func (ac *Controller) sendDM(personID, message string) error {
 	return err
 }
 
+func (ac *Controller) InviteNewPeople(requestData webexteams.WebhookRequest) (string, error) {
+	personID := requestData.Data.PersonID
+	if personID == "" {
+		log.Printf("Webhook from Cisco did not include PersonID")
+		return "", errors.New("No person ID provided")
+	}
+	log.Printf("Inviting Person %s to all rooms", personID)
+	for _, roomID := range ac.config.WebexAllRooms {
+		membershipRequest := &webexteams.MembershipCreateRequest{
+			RoomID:      roomID,
+			PersonID:    personID,
+			IsModerator: false,
+		}
+
+		membershipResult, _, err := ac.teamsClient.Memberships.CreateMembership(membershipRequest)
+		if err != nil {
+			log.Printf("Unable to join Person %s to Room %s because %s", personID, roomID, err)
+		}
+
+		log.Printf("Sent request to join Person %s to Room %s, Membership %s, Created at %s", membershipResult.PersonID, membershipResult.RoomID, membershipResult.ID, membershipResult.Created)
+	}
+	return "", nil
+}
+
 func (ac *Controller) handleCommand (message string, person *webexteams.Person) (string, string, error) {
 	message = strings.TrimPrefix(message, "BarcampGRBot")
 	message = strings.TrimPrefix(message, " ")

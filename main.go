@@ -31,7 +31,9 @@ func main() {
 		AdminPassword: os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
 		WebexRoomID: os.Getenv("WEBEX_ROOM_ID"),
 		WebexCallbackURL: os.Getenv("WEBEX_CALLBACK_URL"),
+		WebexMembershipCallbackURL: os.Getenv("WEBEX_MEMBERSHIP_CALLBACK_URL"),
 	}
+	conf.SetWebexAllRooms(os.Getenv("WEBEX_ALL_ROOMS"))
 	log.Println("Attempting to start webex teams client")
 	teamsClient := webexteams.NewClient()
 	initTeamsClient(teamsClient, conf)
@@ -59,7 +61,6 @@ func main() {
 
 func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	client.SetAuthToken(config.APIToken)
-	webHookURL := config.WebexCallbackURL
 
 	// Clean up old webhooks
 	webhooksQueryParams := &webexteams.ListWebhooksQueryParams{
@@ -73,14 +74,14 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	for _, webhook := range webhooks.Items {
 		_, err := client.Webhooks.DeleteWebhook(webhook.ID)
 		if err != nil {
-			log.Printf("Unable to clean up old webhook")
+			log.Printf("Unable to clean up old webhook %s on endpoint %s", webhook.ID, webhook.TargetURL)
 		}
 	}
 
 	// Create new webhook
 	webhookRequest := &webexteams.WebhookCreateRequest{
-		Name:      "BarCampGR Webhook - Test",
-		TargetURL: webHookURL,
+		Name:      "BarCampGR Webhook",
+		TargetURL: config.WebexCallbackURL,
 		Resource:  "messages",
 		Event:     "created",
 
@@ -91,6 +92,22 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 		log.Fatal(fmt.Printf("Failed to create webhook: %s", err))
 	}
 
-	log.Printf("Created webhook. ID: %s, Name: %s, target URL: %s, created: %s", testWebhook.ID, testWebhook.Name, testWebhook.TargetURL, testWebhook.Created)
+	log.Printf("Created chatop webhook. ID: %s, Name: %s, target URL: %s, created: %s", testWebhook.ID, testWebhook.Name, testWebhook.TargetURL, testWebhook.Created)
+
+	// Create new webhook
+	membershipWebhookRequest := &webexteams.WebhookCreateRequest{
+		Name:      "BarCampGR Memberships Webhook",
+		TargetURL: config.WebexMembershipCallbackURL,
+		Resource:  "memberships",
+		Event:     "created",
+		Filter:    fmt.Sprintf("roomId=%s", config.WebexRoomID),
+	}
+
+	testMembershipWebhook, _, err := client.Webhooks.CreateWebhook(membershipWebhookRequest)
+	if err != nil {
+		log.Fatal(fmt.Printf("Failed to create webhook: %s", err))
+	}
+	log.Printf("Created membership webhook. ID: %s, Name: %s, target URL: %s, created: %s", testMembershipWebhook.ID, testMembershipWebhook.Name, testMembershipWebhook.TargetURL, testMembershipWebhook.Created)
+
 	return nil
 }
