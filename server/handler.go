@@ -8,7 +8,7 @@ import (
 
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
 
-	webexteams "github.com/jbogarin/go-cisco-webex-teams/sdk"
+	webexteams "github.com/twodarek/go-cisco-webex-teams/sdk"
 )
 
 type AppHandler struct {

@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	webexteams "github.com/jbogarin/go-cisco-webex-teams/sdk"
+	webexteams "github.com/twodarek/go-cisco-webex-teams/sdk"
 
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
 	"github.com/twodarek/barcampgr-teams-bot/server"

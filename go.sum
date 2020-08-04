@@ -13,8 +13,6 @@ github.com/google/go-querystring v1.0.0 h1:Xkwi/a1rcvNg1PPYe5vI8GbeBY/jrVuDX5ASu
 github.com/google/go-querystring v1.0.0/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
 github.com/gorilla/mux v1.7.4 h1:VuZ8uybHlWmqV03+zRzdwKL4tUnIp1MAQtp1mIFE1bc=
 github.com/gorilla/mux v1.7.4/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
-github.com/jbogarin/go-cisco-webex-teams v0.3.1-0.20200410165009-0ccb156e12a4 h1:Z8x8M/F/UOynImTV8F7wqeaWNXeZT+3Xmlo+AxLVaS0=
-github.com/jbogarin/go-cisco-webex-teams v0.3.1-0.20200410165009-0ccb156e12a4/go.mod h1:oFsCFLxXAstz3Q0pRqUwFSmwPrkRo0t1/nAZUXoZCGk=
 github.com/jinzhu/gorm v1.9.12 h1:Drgk1clyWT9t9ERbzHza6Mj/8FY/CqMyVzOiHviMo6Q=
 github.com/jinzhu/gorm v1.9.12/go.mod h1:vhTjlKSJUTWNtcbQtrMBFCxy7eXTzeCAzfL5fBZT/Qs=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
@@ -34,6 +32,8 @@ github.com/peterhellberg/link v1.0.0 h1:mUWkiegowUXEcmlb+ybF75Q/8D2Y0BjZtR8cxoKh
 github.com/peterhellberg/link v1.0.0/go.mod h1:gtSlOT4jmkY8P47hbTc8PTgiDDWpdPbFYl75keYyBB8=
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
+github.com/twodarek/go-cisco-webex-teams v0.4.1-0.20200803230619-bf35b2bae4c8 h1:4Yeqivf1+ZQ2afWuNeCIW3UNherWQ1B1L9dGRKu90dU=
+github.com/twodarek/go-cisco-webex-teams v0.4.1-0.20200803230619-bf35b2bae4c8/go.mod h1:2yhuo7zg8oKErbxVd6KBNFJFqOP2Ib58CHWU3ceUniQ=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd h1:GGJVjV8waZKRHrgwvtH66z9ZGVurTD1MT0n1Bb+q4aM=

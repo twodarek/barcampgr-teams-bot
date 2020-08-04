@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	webexteams "github.com/jbogarin/go-cisco-webex-teams/sdk"
+	webexteams "github.com/twodarek/go-cisco-webex-teams/sdk"
 
 	"github.com/twodarek/barcampgr-teams-bot/database"
 )
@@ -117,9 +117,11 @@ func (ac *Controller) InviteNewPeople(requestData webexteams.WebhookRequest) (st
 		membershipResult, _, err := ac.teamsClient.Memberships.CreateMembership(membershipRequest)
 		if err != nil {
 			log.Printf("Unable to join Person %s to Room %s because %s", personID, roomID, err)
+		} else {
+			log.Printf("Sent request to join Person %s to Room %s, Membership %s, Created at %s", membershipResult.PersonID, membershipResult.RoomID, membershipResult.ID, membershipResult.Created)
 		}
+		time.Sleep(100 * time.Millisecond)
 
-		log.Printf("Sent request to join Person %s to Room %s, Membership %s, Created at %s", membershipResult.PersonID, membershipResult.RoomID, membershipResult.ID, membershipResult.Created)
 	}
 	return "", nil
 }
