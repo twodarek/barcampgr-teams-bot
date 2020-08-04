@@ -126,6 +126,45 @@ func (ac *Controller) InviteNewPeople(requestData webexteams.WebhookRequest) (st
 	return "", nil
 }
 
+func (ac *Controller) InviteNewEmail(requestData InvitePerson) (string, error) {
+	emails := []string{requestData.Email}
+
+	personRequest := &webexteams.PersonRequest{
+		Emails:      emails,
+		FirstName:   requestData.FirstName,
+		LastName:    requestData.LastName,
+		OrgID:	     ac.config.WebexOrgID,
+	}
+
+	personResult, _, err := ac.teamsClient.People.CreatePerson(personRequest)
+	log.Printf("Person Result: %#v", personResult)
+	log.Printf("Error: %s", err)
+	if err != nil {
+		log.Printf("Unable to create Person %s because %s", requestData.Email, err)
+	} else {
+		log.Printf("Sent request to create Person %s, ID %s, Created at %s", personResult.Emails, personResult.ID, personResult.Created)
+	}
+
+	log.Printf("Inviting person %s to the team", personResult.ID)
+
+	teamMembership := &webexteams.TeamMembershipCreateRequest{
+		TeamID:      ac.config.WebexTeamID,
+		PersonID:    personResult.ID,
+		IsModerator: false,
+	}
+
+	teamMembershipResult, _, err := ac.teamsClient.TeamMemberships.CreateTeamMembership(teamMembership)
+	log.Printf("Team Result: %#v", teamMembershipResult)
+	log.Printf("Error: %s", err)
+	if err != nil {
+		log.Printf("Unable to invite Person %s to the Team because %s", personResult.ID, err)
+	} else {
+		log.Printf("Sent request to join Email %s to the Team, Membership %s, Created at %s", teamMembershipResult.PersonEmail, teamMembershipResult.ID, teamMembershipResult.Created)
+	}
+
+	return "", nil
+}
+
 func (ac *Controller) handleCommand (message string, person *webexteams.Person) (string, string, error) {
 	message = strings.TrimPrefix(message, "BarcampGRBot")
 	message = strings.TrimPrefix(message, " ")

@@ -11,7 +11,10 @@ type Config struct {
 	MySqlPort string
 	MySqlDatabase string
 	AdminPassword string
+	InvitePassword string
+	WebexTeamID string
 	WebexRoomID string
+	WebexOrgID string
 	WebexCallbackURL string
 	WebexMembershipCallbackURL string
 	WebexAllRooms []string
@@ -26,7 +29,10 @@ func New(
 	mySqlPort string,
 	mySqlDatabase string,
 	adminPassword string,
+	invitePassword string,
+	webexTeamID string,
 	webexRoomID string,
+	webexOrgID string,
 	webexCallbackURL string,
 	webexMembershipCallbackURL string,
 	webexAllRooms []string,
@@ -40,7 +46,10 @@ func New(
 		MySqlPort: mySqlPort,
 		MySqlDatabase: mySqlDatabase,
 		AdminPassword: adminPassword,
+		InvitePassword: invitePassword,
+		WebexTeamID: webexTeamID,
 		WebexRoomID: webexRoomID,
+		WebexOrgID: webexOrgID,
 		WebexCallbackURL: webexCallbackURL,
 		WebexMembershipCallbackURL: webexMembershipCallbackURL,
 		WebexAllRooms: webexAllRooms,

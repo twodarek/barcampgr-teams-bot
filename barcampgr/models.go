@@ -33,3 +33,9 @@ type ScheduleRoom struct {
 	Name string `json:"name"`
 	ID int `json:"id"`
 }
+
+type InvitePerson struct {
+	Email string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName string `json:"lastName"`
+}

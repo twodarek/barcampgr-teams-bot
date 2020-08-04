@@ -53,6 +53,7 @@ func New(
 	// Admin functions
 	s.router.HandleFunc("/api/v1/migrate/create/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
 	s.router.HandleFunc("/api/v1/migrate/generate/{sessionBlock}/{password}", s.authMiddleWare(appHandler.RollSchedule)).Methods("GET")
+	//s.router.HandleFunc("/api/v1/invites/new/{password}/", s.authMiddleWare(appHandler.InviteNewEmails)).Methods("POST")
 
 	// Path for static files
 	s.router.PathPrefix("/").Handler(http.FileServer(http.Dir("/public/front-end")))
