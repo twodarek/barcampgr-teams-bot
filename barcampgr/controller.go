@@ -40,7 +40,7 @@ func NewAppController(
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule` or `get grid` to get a link to the schedule grid\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `test <MESSAGE>` to test this bot and echo something back to you"
+const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule` or `get grid` to get a link to the schedule grid\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n - `test <MESSAGE>` to test this bot and echo something back to you"
 
 func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (string, error) {
 	message, _, err := ac.teamsClient.Messages.GetMessage(requestData.Data.ID)
@@ -173,8 +173,8 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 	switch strings.ToLower(commandArray[0]) {
 		case "schedule":
 			switch strings.ToLower(commandArray[1]) {
-			case "link":
-				return "", "", nil
+			case "web":
+				return ac.scheduleWeb(person)
 			default:
 				log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, person.DisplayName)
 				message, dmMessage, err := ac.parseAndScheduleTalk(person, commandArray[1:])
@@ -208,6 +208,21 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 		default:
 			return fmt.Sprintf("Sorry, I don't know how to handle '%s'.  %s", ac.commandArrayToString(commandArray), help_message), "", nil
 	}
+}
+
+func (ac *Controller) scheduleWeb(person *webexteams.Person) (string, string, error) {
+	stubTalk := database.DBScheduleSession{
+		UpdaterName:          person.DisplayName,
+		UpdaterID:            person.ID,
+		UniqueString:         ac.generateUniqueString(),
+		Version:              0,
+		OutDated:             false,
+	}
+	result := ac.sdb.Orm.Create(&stubTalk)
+	if result.Error != nil {
+		return fmt.Sprintf("I'm sorry, an error occurred when attempting to generate your link.  Error: %s", result.Error), "", nil
+	}
+	return "I'll DM you a link to continue with your talk information.", fmt.Sprintf("Please go to this link to complete your talk information: https://talks.barcampgr.org/actions/?unique_str=%s", stubTalk.UniqueString), nil
 }
 
 func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArray []string) (string, string, error) {
@@ -330,7 +345,7 @@ func (ac *Controller) generateUniqueString() string {
 
 func (ac *Controller) sessionStrNotUsed (sessionStr string) bool {
 	session := database.DBScheduleSession{}
-	result := ac.sdb.Orm.Where("unique_str = ?", sessionStr).Find(&session)
+	result := ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&session)
 	if result.Error != nil {
 		if gorm.IsRecordNotFoundError(result.Error){
 			return true
