@@ -232,7 +232,7 @@ func (ac *Controller) scheduleWeb(person *webexteams.Person) (string, string, er
 
 func (ac *Controller) getAllMyLinks(person *webexteams.Person) (string, string, error) {
 	var sessions []database.DBScheduleSession;
-	results := ac.sdb.Orm.Where("updater_id = ?", person.ID).Find(&sessions)
+	results := ac.sdb.Orm.Where("updater_id = ? AND out_dated = 0", person.ID).Find(&sessions)
 	if results.Error != nil {
 		return "", "", results.Error
 	}
