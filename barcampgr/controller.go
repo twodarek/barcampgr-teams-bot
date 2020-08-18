@@ -210,6 +210,11 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 			return "Pong", "Pong", nil
 		case "help", "hi", "hi!", "hello", "hello!", "/help":
 			return fmt.Sprintf("Hi!  I'm BarCampGR's automation bot!  %s", help_message), "", nil
+		case "admin":
+			if len(commandArray) < 2 {
+				return "Admins hide in `Organizer Chat`.", "", nil
+			}
+			return ac.handleAdminAction(commandArray[1:], person)
 		default:
 			return fmt.Sprintf("Sorry, I don't know how to handle '%s'.  %s", ac.commandArrayToString(commandArray), help_message), "", nil
 	}
@@ -833,4 +838,34 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 
 func (ac *Controller) DeleteSession(sessionStr string) error {
 	return ac.sdb.Orm.Where("unique_string = ?", sessionStr).Delete(database.DBScheduleSession{}).Error
+}
+
+func (ac *Controller) handleAdminAction(commandArray []string, person *webexteams.Person) (string, string, error) {
+	params := &webexteams.ListMembershipsQueryParams{
+		RoomID:      ac.config.WebexRoomID,
+		PersonID:    person.ID,
+	}
+	memberships, _, err := ac.teamsClient.Memberships.ListMemberships(params)
+	if err != nil {
+		return "Unable to authenticate you as an admin user.", "", err
+	}
+	isAdmin := false
+	for _, membership := range memberships.Items {
+		if membership.IsModerator {
+			isAdmin = true
+		}
+	}
+	if !isAdmin {
+		return "Unable to authenticate you as an admin user.", "", err
+	}
+	switch commandArray[0] {
+	case "roll":
+		err := ac.RollSchedule(commandArray[1])
+		if err != nil {
+			return "Unable to roll the schedule.", "", err
+		}
+		return fmt.Sprintf("The schedule has been successfully rolled to %s", commandArray[1]), "", nil
+	default:
+		return "I'm sorry, I don't know how to run that admin command.", "", errors.New("Command not recognized.")
+	}
 }
