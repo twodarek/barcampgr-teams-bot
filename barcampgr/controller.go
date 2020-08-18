@@ -40,7 +40,7 @@ func NewAppController(
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule` or `get grid` to get a link to the schedule grid\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n - `test <MESSAGE>` to test this bot and echo something back to you"
+const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form"
 
 func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (string, error) {
 	message, _, err := ac.teamsClient.Messages.GetMessage(requestData.Data.ID)
@@ -66,19 +66,21 @@ func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (strin
 	log.Printf("Get message from room. Title: %s, Type: %s", room.Title, room.RoomType)
 
 	replyText, dmText, err := ac.handleCommand(message.Text, person)
-	if err != nil || replyText == "" {
+	if err != nil {
 		replyText = fmt.Sprintf("Hello %s!  I have received your request of '%s', but I'm unable to do that right now.  Message: %s, Error: %s", person.DisplayName, message.Text, replyText, err)
 	}
 
-	replyMessage := &webexteams.MessageCreateRequest{
-		RoomID:   message.RoomID,
-		Markdown: replyText,
+	if replyText != "" {
+		replyMessage := &webexteams.MessageCreateRequest{
+			RoomID:   message.RoomID,
+			Markdown: replyText,
+		}
+		_, resp, err := ac.teamsClient.Messages.CreateMessage(replyMessage)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("Unable to reply to message %s", message.ID))
+		}
+		log.Printf("Replied with %s, got http code %d, body %s", replyText, resp.StatusCode(), resp.Body())
 	}
-	_, resp, err := ac.teamsClient.Messages.CreateMessage(replyMessage)
-	if err != nil {
-		return "", errors.New(fmt.Sprintf("Unable to reply to message %s", message.ID))
-	}
-	log.Printf("Replied with %s, got http code %d, body %s", replyText, resp.StatusCode(), resp.Body())
 
 	if dmText != "" {
 		err = ac.sendDM(person.ID, dmText)
@@ -187,7 +189,10 @@ func (ac *Controller) handleCommand (message string, person *webexteams.Person) 
 			switch strings.ToLower(commandArray[1]) {
 			case "schedule", "talks", "grid":
 				log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
-				return fmt.Sprintf("The talk grid can be found at https://talks.barcmpgr.org/"), "", nil
+				return fmt.Sprintf("The talk grid can be found at https://talks.barcampgr.org/"), "", nil
+			case "links":
+				message, dmMessage, err := ac.getAllMyLinks(person)
+				return message, dmMessage, err
 			default:
 				return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.commandArrayToString(commandArray)))
 			}
@@ -223,6 +228,22 @@ func (ac *Controller) scheduleWeb(person *webexteams.Person) (string, string, er
 		return fmt.Sprintf("I'm sorry, an error occurred when attempting to generate your link.  Error: %s", result.Error), "", nil
 	}
 	return "I'll DM you a link to continue with your talk information.", fmt.Sprintf("Please go to this link to complete your talk information: https://talks.barcampgr.org/actions/?unique_str=%s", stubTalk.UniqueString), nil
+}
+
+func (ac *Controller) getAllMyLinks(person *webexteams.Person) (string, string, error) {
+	var sessions []database.DBScheduleSession;
+	results := ac.sdb.Orm.Where("updater_id = ?", person.ID).Find(&sessions)
+	if results.Error != nil {
+		return "", "", results.Error
+	}
+	if len(sessions) < 1 {
+		return "", "I'm sorry, I couldn't find any sessions created by you.", nil
+	}
+	stringOut := "Here are your edit session links:"
+	for _, session := range sessions {
+		stringOut = fmt.Sprintf("%s\n - %s", stringOut, session.GetEditInfo())
+	}
+	return "", stringOut, nil
 }
 
 func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArray []string) (string, string, error) {
@@ -577,7 +598,7 @@ func (ac *Controller) RollSchedule(scheduleBlock string) error  {
 }
 
 func (ac *Controller) confirmAndGenerateRooms() error {
-	rooms := [7]string{"General", "2020", "Creative Corner", "Programming", "Room 120", "Room 140", "Room 170"}
+	rooms := [8]string{"General", "2020", "Creative Corner", "Programming", "Room 120", "Room 140", "Room 170", "Wellness"}
 	for _, room := range rooms {
 		var roomObj database.DBScheduleRoom
 		result := ac.sdb.Orm.Where("name = ?", room).Find(roomObj)
@@ -761,7 +782,8 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 		}
 
 		sessionTest := database.DBScheduleSession{}
-		if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ? AND out_dated = 0", sessionInbound.Room, sessionInbound.Time).First(&sessionTest).Error; err != nil {
+		err := ac.sdb.Orm.Where("room_id = ? AND time_id = ? AND out_dated = 0", sessionInbound.Room, sessionInbound.Time).First(&sessionTest).Error
+		if err != nil {
 			if gorm.IsRecordNotFoundError(err){
 				sessionObj.OutDated = true
 				result := ac.sdb.Orm.Save(&sessionObj)
@@ -784,7 +806,26 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 				return err
 			}
 		}
-		return errors.New("Sorry, a session already is scheduled for that time and room.  Please select an available slot.")
+		if sessionTest.UniqueString != sessionInbound.UniqueString {
+			log.Printf("error in updating session %s, Error: %s", sessionInbound.UniqueString, err)
+			return errors.New("Sorry, a session already is scheduled for that time and room.  Please select an available slot.")
+		}
+		sessionObj.OutDated = true
+		result := ac.sdb.Orm.Save(&sessionObj)
+		if result.Error != nil {
+			return result.Error
+		}
+		result = ac.sdb.Orm.Create(&newSession)
+		if result.Error != nil {
+			log.Printf("Received error %s when trying to update talk %s from %s", result.Error, sessionInbound.UniqueString, sessionObj.UniqueString)
+			return result.Error
+		} else {
+			log.Printf("Updated talk %s from %s with %d rows affected", newSession.UniqueString, sessionObj.UniqueString, result.RowsAffected)
+			ac.fillTime(&newSession)
+			ac.fillRoom(&newSession)
+			ac.sendDM(newSession.UpdaterID, fmt.Sprintf(fmt.Sprintf("I've scheduled your session %s", newSession.ToDmString())))
+			return nil
+		}
 	}
 	return errors.New("Previous session not found to update.")
 }
