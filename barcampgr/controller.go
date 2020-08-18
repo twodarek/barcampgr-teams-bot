@@ -667,6 +667,7 @@ func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, r
 				Title:   s.Title,
 				Speaker: s.Speaker,
 				UniqueString: s.UniqueString,
+				AltText: fmt.Sprintf("%s by %s in %s at %s", s.Title, s.Speaker, room.Name, s.Time.Start),
 			})
 		}
 	}

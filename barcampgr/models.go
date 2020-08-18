@@ -27,6 +27,7 @@ type ScheduleSession struct {
 	Speaker string `json:"speaker"`
 	UniqueString string `json:"uniqueString"`
 	Version int `json:"-"`
+	AltText string `json:"altText,string"`
 }
 
 type ScheduleRoom struct {

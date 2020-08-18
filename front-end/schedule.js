@@ -49,6 +49,7 @@ function populateSchedule(data) {
             for (var session of track["sessions"]) {
                 var targetCellSelector = '#' + getSlotId(track['room'], session['time']);
                 $(targetCellSelector).html("<span class='title'>" + session.title + "</span><span class='speaker'>" + session.speaker + "</span>");
+                $(targetCellSelector).attr("aria-description", session.altText);
             }
         }
     }
