@@ -56,3 +56,7 @@ span.speaker {
 	font-family: 'Open Sans', sans-serif;
 	font-style: italic;
 }
+
+.a11y-pxl {
+	position: absolute;
+}
