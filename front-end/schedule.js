@@ -4,8 +4,8 @@ var sample3 = JSON.parse('{"refreshedAt":"","lastUpdate":"","times":[{"id":1,"st
 
 $(function() {
     var url = "/api/v1/schedule";
-    // httpGetAsync(url, createSchedule);
-    createSchedule(sample3);
+    httpGetAsync(url, createSchedule);
+    // createSchedule(sample3);
 });
 
 function getSlotId(room, timeId) {
@@ -50,7 +50,13 @@ function populateSchedule(data) {
         if (track["sessions"] != null) {
             for (var session of track["sessions"]) {
                 var targetCellSelector = '#' + getSlotId(track['room'], session['time']);
-                $(targetCellSelector).html($(targetCellSelector).html() + "<span class='title'>" + session.title + "</span><span class='speaker'>" + session.speaker + "</span>");
+
+                if (session.title == 'Blocked' && !session.speaker) {
+                    $(targetCellSelector).html($(targetCellSelector).html() + "<img src='red-x.png' class='blocked-slot' alt='big red x marking this slot as blocked, probably because there is something important happening in a different room at the same time'>");
+                } else {
+                    $(targetCellSelector).html($(targetCellSelector).html() + "<span class='title'>" + session.title + "</span><span class='speaker'>" + session.speaker + "</span>");
+                }
+
                 $(targetCellSelector).find(".a11y-pxl").attr("alt", session.altText);
                 $(targetCellSelector).attr("aria-description", session.altText);
             }

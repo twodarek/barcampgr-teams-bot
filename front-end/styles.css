@@ -60,3 +60,7 @@ span.speaker {
 .a11y-pxl {
 	position: absolute;
 }
+
+.blocked-slot {
+	width: 100%;
+}
