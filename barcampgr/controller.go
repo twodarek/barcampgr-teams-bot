@@ -666,13 +666,19 @@ func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, r
 			continue
 		}
 		if s.Time.Displayable && s.RoomID == int(room.ID) {
+			var altText string
+			if s.Title == "Blocked" {
+				altText = "Unscheduleable time"
+			} else {
+				altText = fmt.Sprintf("%s by %s in %s at %s", s.Title, s.Speaker, room.Name, s.Time.Start)
+			}
 			resultant = append(resultant, ScheduleSession{
 				Time:    int(s.Time.ID),
 				Room:    int(room.ID),
 				Title:   s.Title,
 				Speaker: s.Speaker,
 				UniqueString: s.UniqueString,
-				AltText: fmt.Sprintf("%s by %s in %s at %s", s.Title, s.Speaker, room.Name, s.Time.Start),
+				AltText: altText,
 			})
 		}
 	}
