@@ -168,7 +168,10 @@ func (ac *Controller) InviteNewEmail(requestData InvitePerson) (string, error) {
 }
 
 func (ac *Controller) handleCommand (message string, person *webexteams.Person) (string, string, error) {
+	message = strings.TrimPrefix(message, "@BarcampGRBot")
+	message = strings.TrimPrefix(message, "@barcampgrbot")
 	message = strings.TrimPrefix(message, "BarcampGRBot")
+	message = strings.TrimPrefix(message, "barcampgrbot")
 	message = strings.TrimPrefix(message, " ")
 	commandArray := strings.Split(message, " ")
 	displayName := person.DisplayName
