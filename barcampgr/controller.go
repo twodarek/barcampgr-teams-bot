@@ -261,7 +261,7 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	// me at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
 
 	if len(commandArray) < 7 {
-		return "You must provide all arguments for `schedule <person|me> at <time> in <room> for <title>`", "", nil
+		return "You must provide all arguments for `schedule <person|me> at <time> in <room> for <title>` \n Example: `schedule me at 7:00pm in Wellness for An Awesome Talk` or `schedule Jane at 7:30pm in Wellness for Another Awesome Talk`", "", nil
 	}
 
 	if strings.ToLower(commandArray[0]) == "me" {
@@ -341,7 +341,7 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 				return message, "", result.Error
 			} else {
 				log.Printf("Created talk %s with %d rows affected", ac.commandArrayToString(commandArray), result.RowsAffected)
-				message = fmt.Sprintf("I've scheduled your session %s", session.ToString())
+				message = fmt.Sprintf("I've scheduled your session %s.  A link has been DM'd to you to manage your session entry on the grid.", session.ToString())
 				dmMessage := fmt.Sprintf("Here I just scheduled this session for you: %s", session.ToDmString())
 				return message, dmMessage, nil
 			}
