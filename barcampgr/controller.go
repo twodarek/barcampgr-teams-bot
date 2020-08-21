@@ -40,7 +40,7 @@ func NewAppController(
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form"
+const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n\nMake sure to `@barcampgrbot` at the start or I won't get the message!"
 
 func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (string, error) {
 	message, _, err := ac.teamsClient.Messages.GetMessage(requestData.Data.ID)
@@ -290,7 +290,7 @@ func (ac *Controller) parseAndScheduleTalk(person *webexteams.Person, commandArr
 	currentArrayPos++
 	for i, s := range commandArray[currentArrayPos:] {
 		room = room + " " + s
-		if ac.isCommandWord(commandArray[i + currentArrayPos + 1]) {
+		if ac.isCommandWord(commandArray[i + currentArrayPos + 1]) && strings.ToLower(s) != "life" {
 			currentArrayPos = i + currentArrayPos + 1
 			break
 		}
@@ -603,7 +603,7 @@ func (ac *Controller) RollSchedule(scheduleBlock string) error  {
 }
 
 func (ac *Controller) confirmAndGenerateRooms() error {
-	rooms := [8]string{"General", "2020", "Creative Corner", "Programming", "Room 120", "Room 140", "Room 170", "Wellness"}
+	rooms := [8]string{"General", "Life in 2020", "Creative Corner", "Programming", "Room 120", "Room 140", "Room 170", "Wellness"}
 	for _, room := range rooms {
 		var roomObj database.DBScheduleRoom
 		result := ac.sdb.Orm.Where("name = ?", room).Find(roomObj)
