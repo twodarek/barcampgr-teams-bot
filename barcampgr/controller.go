@@ -43,6 +43,11 @@ const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n\nMake sure to `@barcampgrbot` at the start or I won't get the message!"
 
 func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (string, error) {
+	// Filter to make sure it's only from BarCampGR
+	if requestData.OrgID != ac.config.WebexOrgID {
+		return "", errors.New(fmt.Sprintf("Unable to handle messages from non-BarCampGR orgs %s", requestData.Data.ID))
+	}
+
 	message, _, err := ac.teamsClient.Messages.GetMessage(requestData.Data.ID)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to get message id %s", requestData.Data.ID))

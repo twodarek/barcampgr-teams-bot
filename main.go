@@ -81,7 +81,7 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 		}
 	}
 
-	// Create new webhook
+	// Create new @bot message webhook
 	webhookRequest := &webexteams.WebhookCreateRequest{
 		Name:      "BarCampGR Webhook",
 		TargetURL: config.WebexCallbackURL,
@@ -97,7 +97,7 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 
 	log.Printf("Created chatop webhook. ID: %s, Name: %s, target URL: %s, created: %s", testWebhook.ID, testWebhook.Name, testWebhook.TargetURL, testWebhook.Created)
 
-	// Create new webhook
+	// Create new memberships webhook
 	membershipWebhookRequest := &webexteams.WebhookCreateRequest{
 		Name:      "BarCampGR Memberships Webhook",
 		TargetURL: config.WebexMembershipCallbackURL,
