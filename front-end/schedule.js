@@ -16,31 +16,25 @@ function getSlotId(room, timeId) {
 }
 
 function createSchedule(data) {
-    var table = document.getElementById("schedule");
-    var headerRow = document.getElementById("header-row");
     var timeIds = [];
+    var cellHtml;
 
     for (var slot of data["times"]) {
-        var cell = document.createElement('th');
         timeIds.push(slot.id);
-        cell.innerHTML = "<span>" + slot.start + " - " + slot.end + "</span>";
-        headerRow.appendChild(cell);
+        cellHtml = "<th><span>" + slot.start + " - " + slot.end + "</span></th>";
+        $("#header-row").append(cellHtml);
     }
-    table.appendChild(headerRow);
 
+    var newRow;
     for (var track of data["rows"]) {
-        var row = document.createElement('tr');
-        var labelCell = document.createElement('td');
-        labelCell.innerHTML = "<span>" + track['room'] + "</span>";
-        row.appendChild(labelCell);
+        newRow = $("#schedule tbody").append("<tr></tr>");
+        cellHtml = "<td><span>" + track['room'] + "</span></td>";
+        newRow.find("tr").last().append(cellHtml);
 
         for (var id of timeIds) {
-            var cell = document.createElement('td');
-            cell.setAttribute('id', getSlotId(track['room'], id));
-            cell.innerHTML = "<img src='transparent-pixel.png' class='a11y-pxl' alt='empty slot'>";
-            row.appendChild(cell);
+            cellHtml = "<td id='" + getSlotId(track['room'], id) + "'><img src='transparent-pixel.png' class='a11y-pxl' alt='empty slot'></td>";
+            newRow.find("tr").last().append(cellHtml);
         }
-        table.appendChild(row);
     }
     populateSchedule(data);
 }
