@@ -21,7 +21,7 @@ function createSchedule(data) {
 
     for (var slot of data["times"]) {
         timeIds.push(slot.id);
-        cellHtml = "<th><span>" + slot.start + " - " + slot.end + "</span></th>";
+        cellHtml = "<th scope='col'><span>" + slot.start + " - " + slot.end + "</span></th>";
         $("#header-row").append(cellHtml);
     }
 
