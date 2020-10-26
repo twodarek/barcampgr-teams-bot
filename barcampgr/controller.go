@@ -33,8 +33,186 @@ func NewAppController(
 	}
 }
 
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n\nMake sure to `@barcampgrbot` at the start or I won't get the message!"
 
+func (ac *Controller) HandleCommand (message, personDisplayName, personID string) (string, string, error) {
+	message = strings.TrimPrefix(message, "@BarcampGRBot")
+	message = strings.TrimPrefix(message, "@barcampgrbot")
+	message = strings.TrimPrefix(message, "BarcampGRBot")
+	message = strings.TrimPrefix(message, "barcampgrbot")
+	message = strings.TrimPrefix(message, "<@U01D749TL2H>")
+	message = strings.TrimPrefix(message, " ")
+	commandArray := strings.Split(message, " ")
+	displayName := personDisplayName
+	switch strings.ToLower(commandArray[0]) {
+	case "schedule":
+		switch strings.ToLower(commandArray[1]) {
+		//case "web":
+		//	return ac.scheduleWeb(person)
+		default:
+			log.Printf("I'm attempting to schedule block with message %s, commandArray %s, for %s", message, commandArray, personDisplayName)
+			message, dmMessage, err := ac.ParseAndScheduleTalk(personDisplayName, personID, commandArray[1:])
+			return message, dmMessage, err
+		}
+	case "get":
+		if len(commandArray) < 2 {
+			return "", "", errors.New("the command `get` must have arguments, such as `get schedule`")
+		}
+		switch strings.ToLower(commandArray[1]) {
+		case "schedule", "talks", "grid":
+			log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
+			return fmt.Sprintf("The talk grid can be found at https://talks.barcampgr.org/"), "", nil
+		case "links":
+			message, dmMessage, err := ac.GetAllMyLinks(personID)
+			return message, dmMessage, err
+		default:
+			return "", "", errors.New(fmt.Sprintf("Unknown command %s", ac.CommandArrayToString(commandArray)))
+		}
+	case "test":
+		log.Printf("Test message %s, commandArray %s", message, commandArray)
+		return fmt.Sprintf("Hi Test!!!!, I received your message of %s from %s", message, displayName), "", nil
+	case "talks", "talk", "grid":
+		log.Printf("Talk grid message %s, commandArray %s", message, commandArray)
+		return fmt.Sprintf("The talk grid can be found at https://talks.barcampgr.org/"), "", nil
+	case "ping":
+		log.Printf("Ping from %s", displayName)
+		return "Pong", "", nil
+	case "dmping", "dm":
+		log.Printf("DMping from %s", displayName)
+		return "Pong", "Pong", nil
+	case "help", "hi", "hi!", "hello", "hello!", "/help":
+		return fmt.Sprintf("Hi!  I'm BarCampGR's automation bot!  %s", help_message), "", nil
+	//case "admin":
+	//	if len(commandArray) < 2 {
+	//		return "Admins hide in `Organizer Chat`.", "", nil
+	//	}
+	//	return ac.handleAdminAction(commandArray[1:], person)
+	default:
+		return fmt.Sprintf("Sorry, I don't know how to handle '%s'.  %s", ac.CommandArrayToString(commandArray), help_message), "", nil
+	}
+}
+
+func (ac *Controller) ParseAndScheduleTalk(personDisplayName string, personID string, commandArray []string) (string, string, error) {
+	var name string
+	var time string
+	var room string
+	var title string
+	currentArrayPos := 0
+	message := ""
+	// me at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
+
+	if len(commandArray) < 7 {
+		return "You must provide all arguments for `schedule <person|me> at <time> in <room> for <title>` \n Example: `schedule me at 7:00pm in Wellness for An Awesome Talk` or `schedule Jane at 7:30pm in Wellness for Another Awesome Talk`", "", nil
+	}
+
+	if strings.ToLower(commandArray[0]) == "me" {
+		name = personDisplayName
+		currentArrayPos = 1
+		// skip 'at' command word
+	} else {
+		for i, s := range commandArray {
+			name = name + " " + s
+			if ac.IsCommandWord(commandArray[i + 1]) {
+				currentArrayPos = i + 1
+				break
+			}
+		}
+	}
+	name = strings.TrimPrefix(name, " ")
+
+	// at 10:00am in The Hotdog Stand for Speaking to Bots, a Minecraft Story
+	// skip 'at' command word
+	currentArrayPos++
+	time = ac.StandardizeTime(commandArray[currentArrayPos])
+	currentArrayPos++
+
+	// in The Hotdog Stand for Speaking to Bots, a Minecraft Story
+	// skip 'in' command word
+	currentArrayPos++
+	for i, s := range commandArray[currentArrayPos:] {
+		room = room + " " + s
+		if ac.IsCommandWord(commandArray[i + currentArrayPos + 1]) && strings.ToLower(s) != "life" {
+			currentArrayPos = i + currentArrayPos + 1
+			break
+		}
+	}
+	room = strings.TrimPrefix(room, " ")
+
+	// for Speaking to Bots, a Minecraft Story
+	// skip command word "for"
+	currentArrayPos++
+	for _, s := range commandArray[currentArrayPos:] {
+		title = title + " " + s
+	}
+	title = strings.TrimPrefix(title, " ")
+
+	var timeObj database.DBScheduleTime
+	result := ac.sdb.Orm.Where("lower(start) = ? AND displayable = 1", strings.ToLower(time)).Find(&timeObj)
+	if result.Error != nil {
+		log.Printf("Received error %s when trying to query for time starting at %s", result.Error, time)
+		return fmt.Sprintf("Unable to find a scheduleable time starting at %s", time), "", result.Error
+	}
+
+	var roomObj database.DBScheduleRoom
+	result = ac.sdb.Orm.Where("lower(name) = ?", strings.ToLower(room)).Find(&roomObj)
+	if result.Error != nil {
+		log.Printf("Received error %s when trying to query for room %s", result.Error, room)
+		return fmt.Sprintf("Unable to find a room named %s", room), "", result.Error
+	}
+
+	session := database.DBScheduleSession{
+		Time:    &timeObj,
+		Room:    &roomObj,
+		UpdaterName: personDisplayName,
+		UpdaterID: personID,
+		Title:   title,
+		Speaker: name,
+		TimeID:  int(timeObj.ID),
+		RoomID:  int(roomObj.ID),
+		Version: 0,
+		UniqueString: ac.GenerateUniqueString(),
+	}
+
+	var sessionObj database.DBScheduleSession
+	if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ? AND out_dated = 0", session.RoomID, session.TimeID).First(&sessionObj).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err){
+			result = ac.sdb.Orm.Create(&session)
+			if result.Error != nil {
+				log.Printf("Received error %s when trying to create talk %s", result.Error, ac.CommandArrayToString(commandArray))
+				return message, "", result.Error
+			} else {
+				log.Printf("Created talk %s with %d rows affected", ac.CommandArrayToString(commandArray), result.RowsAffected)
+				message = fmt.Sprintf("I've scheduled your session %s.  A link has been DM'd to you to manage your session entry on the grid.", session.ToString())
+				dmMessage := fmt.Sprintf("Here I just scheduled this session for you: %s", session.ToDmString())
+				return message, dmMessage, nil
+			}
+		} else {
+			log.Printf("Received error %s when trying to create talk %s", result.Error, ac.CommandArrayToString(commandArray))
+			return message, "", result.Error
+		}
+	}
+
+	log.Printf("Session already exists at %s in room %s.", session.Time.Start, session.Room.Name)
+	return fmt.Sprintf("I'm sorry, a session already exists at %s in room %s.", session.Time.Start, session.Room.Name), "", nil
+}
+
+func (ac *Controller) GetAllMyLinks(personID string) (string, string, error) {
+	var sessions []database.DBScheduleSession;
+	results := ac.sdb.Orm.Where("updater_id = ? AND out_dated = 0", personID).Find(&sessions)
+	if results.Error != nil {
+		return "", "", results.Error
+	}
+	if len(sessions) < 1 {
+		return "", "I'm sorry, I couldn't find any sessions created by you.", nil
+	}
+	stringOut := "Here are your edit session links:"
+	for _, session := range sessions {
+		stringOut = fmt.Sprintf("%s\n - %s", stringOut, session.GetEditInfo())
+	}
+	return "", stringOut, nil
+}
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 func (ac *Controller) GenerateUniqueString() string {
 	for i := 0; i < 10; i++ {
 		resultant := make([]byte, 64)
