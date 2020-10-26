@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>BarCamp GR Cisco Teams Bot Help Text</title>
+</head>
+<style>
+	#help-text {
+		font-family: 'Open Sans', sans-serif;
+		margin-top: 15px;
+	}
+
+	#help-text h2 {
+		font-family: 'Montserrat', sans-serif;
+		font-size: 1.4em;
+		font-weight: 600;
+		margin-bottom: 0.5em;
+	}
+
+	#help-text p {
+		margin: 0;
+	}
+
+	#help-text p:nth-child(3) {
+		margin-top: 10px;
+	}
+
+	#help-text ul {
+		margin-top: 5px;
+	}
+
+	#help-text span.instruction {
+		display: block;
+		padding-left: 20px;
+		font-size: 0.9em;
+		margin-bottom: 5px;
+	}
+
+	#help-text span.code {
+		font-family: "Lucida Console", Monaco, monospace;
+		background-color: #e6e6e6;
+	}
+</style>
+<body>
+	<div id="help-text">
+		<h2>How Does This Work?</h2>
+		<p>
+			We've got a bot, and you can talk to it in the Cisco Teams space!
+		</p>
+		<p>
+			Here's what it can do:
+			<ul>
+				<li>
+					Send you a link to a web form where you can schedule a talk
+					<span class="instruction"> – To do this, type <span class="code">@barcampgrbot schedule web</span> into the chat in any room</span>
+				</li>
+				<li>
+					Schedule a talk for you
+					<span class="instruction"> – To do this, type <span class="code">@barcampgrbot schedule me at START_TIME in ROOM for TITLE</span> into the chat in any room</span>
+				</li>
+				<li>
+					Send you the unique edit links to any talks you've scheduled
+					<span class="instruction"> – To do this, type <span class="code">@barcampgrbot get links</span> into the chat in any room</span>
+				</li>
+				<li>
+					For a full list of what the bot can do, type <span class="code">@barcampgrbot help</span> into the chat in any room</span>
+				</li>
+			</ul>
+		</p>
+	</div>
+</body>
+</html>
