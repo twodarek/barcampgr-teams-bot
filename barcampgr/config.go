@@ -1,6 +1,8 @@
 package barcampgr
 
-import "strings"
+import (
+	"strings"
+)
 
 type Config struct {
 	SlackAPIToken	 string
@@ -14,6 +16,8 @@ type Config struct {
 	MySqlDatabase    string
 	AdminPassword    string
 	InvitePassword   string
+	SlackCallbackURL string
+	SlackVerificationToken string
 	WebexTeamID      string
 	WebexRoomID string
 	WebexOrgID string
@@ -34,6 +38,8 @@ func New(
 	mySqlDatabase string,
 	adminPassword string,
 	invitePassword string,
+	slackCallbackURL string,
+	slackVerificationToken string,
 	webexTeamID string,
 	webexRoomID string,
 	webexOrgID string,
@@ -53,6 +59,8 @@ func New(
 		MySqlDatabase:    mySqlDatabase,
 		AdminPassword:    adminPassword,
 		InvitePassword:   invitePassword,
+		SlackCallbackURL: slackCallbackURL,
+		SlackVerificationToken: slackVerificationToken,
 		WebexTeamID:      webexTeamID,
 		WebexRoomID: webexRoomID,
 		WebexOrgID: webexOrgID,

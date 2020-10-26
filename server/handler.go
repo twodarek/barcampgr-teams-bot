@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
+	"github.com/slack-go/slack/slackevents"
+	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"log"
 	"net/http"
@@ -15,9 +17,46 @@ import (
 
 type AppHandler struct {
 	AppController      *barcampgr.Controller
-	SlackAppController *slack.Controller
+	SlackAppController *bslack.Controller
 	TeamsAppController *teams.Controller
 	config             barcampgr.Config
+}
+
+func (ah *AppHandler) HandleSlackChatop(w http.ResponseWriter, r *http.Request) {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r.Body)
+	body := buf.String()
+	eventsAPIEvent, err := slackevents.ParseEvent(json.RawMessage(body), slackevents.OptionVerifyToken(&slackevents.TokenComparator{VerificationToken: ah.config.SlackVerificationToken}))
+	log.Printf("Received: %s", body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error in handling webhook call: %s", err)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	resultant := ""
+	if eventsAPIEvent.Type == slackevents.URLVerification {
+		log.Printf("This is a verification call")
+		var challenge *slackevents.ChallengeResponse
+		err = json.Unmarshal([]byte(body), &challenge)
+		if err == nil {
+			w.Header().Set("Content-Type", "text")
+			resultant = challenge.Challenge
+		}
+	} else {
+		log.Printf("This is a chatop call")
+		resultant, err = ah.SlackAppController.HandleChatop(eventsAPIEvent)
+	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error in handling chatop call: %s", err)
+		w.Write([]byte(err.Error()))
+	} else {
+		w.Write([]byte(resultant))
+	}
+	return
 }
 
 func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) {
@@ -34,6 +73,27 @@ func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) 
 		log.Printf("Error in handling chatop call: %s", err)
 		w.Write([]byte(err.Error()))
 	} else {
+		w.Write([]byte(resultant))
+	}
+	return
+}
+
+func (ah *AppHandler) InviteNewPeopleSlack(w http.ResponseWriter, r *http.Request) {
+	requestData := webexteams.WebhookRequest{}
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("Received membership created webhook, handling: %#v", requestData)
+	resultant, err := ah.TeamsAppController.InviteNewPeople(requestData)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error in handling chatop call: %s", err)
+		w.Write([]byte(err.Error()))
+	} else {
+		log.Printf("I guess I added people successfully, handled: %#v", requestData)
 		w.Write([]byte(resultant))
 	}
 	return

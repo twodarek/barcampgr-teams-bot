@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
+	"github.com/gorilla/mux"
+	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"github.com/twodarek/barcampgr-teams-bot/database"
+	webexteams "github.com/twodarek/go-cisco-webex-teams/sdk"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/gorilla/mux"
-	webexteams "github.com/twodarek/go-cisco-webex-teams/sdk"
+	"github.com/slack-go/slack"
 
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
 	"github.com/twodarek/barcampgr-teams-bot/server"
@@ -23,6 +24,7 @@ func main() {
 	httpClient := &http.Client{}
 
 	conf := barcampgr.Config{
+		SlackAPIToken:    os.Getenv("SLACK_API_TOKEN"),
 		TeamsAPIToken:    os.Getenv("CISCO_TEAMS_API_TOKEN"),
 		BarCampGRWebexId: os.Getenv("BARCAMPGR_WEBEX_ID"),
 		BaseCallbackURL:  os.Getenv("BARCAMPGR_BASE_CALLBACK_URL"),
@@ -33,13 +35,19 @@ func main() {
 		MySqlDatabase:    os.Getenv("MYSQL_DATABASE"),
 		AdminPassword:    os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
 		InvitePassword:   os.Getenv("BARCAMPGR_INVITE_PASSWORD"),
+		SlackCallbackURL: os.Getenv("SLACK_CALLBACK_URL"),
+		SlackVerificationToken: os.Getenv("SLACK_VERIFICATION_TOKEN"),
 		WebexTeamID:      os.Getenv("BARCAMPGR_TEAM_ID"),
-		WebexOrgID: os.Getenv("WEBEX_ORG_ID"),
-		WebexRoomID: os.Getenv("WEBEX_ROOM_ID"),
+		WebexOrgID: 	  os.Getenv("WEBEX_ORG_ID"),
+		WebexRoomID:      os.Getenv("WEBEX_ROOM_ID"),
 		WebexCallbackURL: os.Getenv("WEBEX_CALLBACK_URL"),
 		WebexMembershipCallbackURL: os.Getenv("WEBEX_MEMBERSHIP_CALLBACK_URL"),
 	}
 	conf.SetWebexAllRooms(os.Getenv("WEBEX_ALL_ROOMS"))
+	log.Println("Attempting to start slack client")
+	slackClient := slack.New(conf.SlackAPIToken, slack.OptionDebug(true))
+	log.Println("Slack client started")
+
 	log.Println("Attempting to start webex teams client")
 	teamsClient := webexteams.NewClient()
 	initTeamsClient(teamsClient, conf)
@@ -54,9 +62,9 @@ func main() {
 		conf,
 	)
 
-	sac := slack.NewAppController(
+	sac := bslack.NewAppController(
 		ac,
-		teamsClient,
+		slackClient,
 		httpClient,
 		sdb,
 		conf,
@@ -78,10 +86,6 @@ func main() {
 	log.Println("Barcampgr-teams-bot started")
 
 	select {}
-}
-
-func initSlackClient() error {
-	return nil
 }
 
 func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {

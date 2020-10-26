@@ -1,19 +1,20 @@
 package slack
 
 import (
+	"github.com/slack-go/slack"
+	"github.com/slack-go/slack/slackevents"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
-
-	webexteams "github.com/twodarek/go-cisco-webex-teams/sdk"
 
 	"github.com/twodarek/barcampgr-teams-bot/database"
 )
 
 type Controller struct {
 	bc  *barcampgr.Controller
-	slackClient *webexteams.Client
+	slackClient *slack.Client
 	httpClient  *http.Client
 	sdb         *database.ScheduleDatabase
 	config      barcampgr.Config
@@ -22,7 +23,7 @@ type Controller struct {
 
 func NewAppController(
 	barcampgrController *barcampgr.Controller,
-	slackClient	*webexteams.Client,
+	slackClient	*slack.Client,
 	httpClient  *http.Client,
 	sdb         *database.ScheduleDatabase,
 	config barcampgr.Config,
@@ -37,11 +38,21 @@ func NewAppController(
 		sRand:        seededRand,
 	}
 }
-//
-//const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-//const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n\nMake sure to `@barcampgrbot` at the start or I won't get the message!"
-//
-//func (ac *Controller) HandleChatop(requestData webexteams.WebhookRequest) (string, error) {
+
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n\nMake sure to `@barcampgrbot` at the start or I won't get the message!"
+
+func (ac *Controller) HandleChatop(eventsAPIEvent slackevents.EventsAPIEvent) (string, error) {
+	if eventsAPIEvent.Type == slackevents.CallbackEvent {
+		innerEvent := eventsAPIEvent.InnerEvent
+		switch ev := innerEvent.Data.(type) {
+		case *slackevents.AppMentionEvent:
+			respChannel, timestamp, err := ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+			log.Printf("Attempted to post to channel %s at timestamp %s, error: %s", respChannel, timestamp, err)
+		}
+	}
+	return "", nil
+}
 //	// Filter to make sure it's only from BarCampGR
 //	if requestData.OrgID != ac.config.WebexOrgID {
 //		return "", errors.New(fmt.Sprintf("Unable to handle messages from non-BarCampGR orgs %s", requestData.Data.ID))

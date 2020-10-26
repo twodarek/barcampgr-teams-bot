@@ -47,11 +47,11 @@ func New(
 	s.router.HandleFunc("/api/", s.authMiddleWare(appHandler.RootHello)).Methods("GET")
 
 	// Routes for chatops
-	s.router.HandleFunc("/api/v1/slack/chatops", s.authMiddleWare(appHandler.HandleTeamsChatop)).Methods("POST")
+	s.router.HandleFunc("/api/v1/slack/chatops", s.authMiddleWare(appHandler.HandleSlackChatop)).Methods("POST")
 	s.router.HandleFunc("/api/v1/webex/chatops", s.authMiddleWare(appHandler.HandleTeamsChatop)).Methods("POST")
 
 	// Routes for membership updates from the main room
-	s.router.HandleFunc("/api/v1/slack/membershipUpdates", s.authMiddleWare(appHandler.InviteNewPeopleTeams)).Methods("POST")
+	s.router.HandleFunc("/api/v1/slack/membershipUpdates", s.authMiddleWare(appHandler.InviteNewPeopleSlack)).Methods("POST")
 	s.router.HandleFunc("/api/v1/webex/membershipUpdates", s.authMiddleWare(appHandler.InviteNewPeopleTeams)).Methods("POST")
 
 	// Routes for web front-end
