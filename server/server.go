@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"log"
 	"net/http"
 
@@ -10,25 +12,33 @@ import (
 )
 
 type Server struct {
-	AppController *barcampgr.Controller
+	AppController	   *barcampgr.Controller
+	SlackAppController *slack.Controller
+	TeamsAppController *teams.Controller
 	config barcampgr.Config
 	router *mux.Router
 }
 
 func New(
 	ac *barcampgr.Controller,
+	sac *slack.Controller,
+	tac *teams.Controller,
 	config barcampgr.Config,
 	router *mux.Router,
 ) *Server {
 	s := &Server{
 		AppController: ac,
+		SlackAppController: sac,
+		TeamsAppController: tac,
 		config: config,
 		router: router,
 	}
 
 	appHandler := AppHandler{
 		AppController: ac,
-		config: config,
+		SlackAppController: sac,
+		TeamsAppController: tac,
+		config:             config,
 	}
 
 
@@ -36,11 +46,13 @@ func New(
 
 	s.router.HandleFunc("/api/", s.authMiddleWare(appHandler.RootHello)).Methods("GET")
 
-	// Route for chatops
-	s.router.HandleFunc("/api/v1/chatops", s.authMiddleWare(appHandler.HandleChatop)).Methods("POST")
+	// Routes for chatops
+	s.router.HandleFunc("/api/v1/slack/chatops", s.authMiddleWare(appHandler.HandleTeamsChatop)).Methods("POST")
+	s.router.HandleFunc("/api/v1/webex/chatops", s.authMiddleWare(appHandler.HandleTeamsChatop)).Methods("POST")
 
-	// Route for membership updates from the main room
-	s.router.HandleFunc("/api/v1/membershipUpdates", s.authMiddleWare(appHandler.InviteNewPeople)).Methods("POST")
+	// Routes for membership updates from the main room
+	s.router.HandleFunc("/api/v1/slack/membershipUpdates", s.authMiddleWare(appHandler.InviteNewPeopleTeams)).Methods("POST")
+	s.router.HandleFunc("/api/v1/webex/membershipUpdates", s.authMiddleWare(appHandler.InviteNewPeopleTeams)).Methods("POST")
 
 	// Routes for web front-end
 	s.router.HandleFunc("/api/v1/schedule", s.authMiddleWare(appHandler.GetScheduleJson)).Methods("GET")
@@ -53,7 +65,7 @@ func New(
 	// Admin functions
 	s.router.HandleFunc("/api/v1/migrate/create/{password}", s.authMiddleWare(appHandler.MigrateDatabase)).Methods("GET")
 	s.router.HandleFunc("/api/v1/migrate/generate/{sessionBlock}/{password}", s.authMiddleWare(appHandler.RollSchedule)).Methods("GET")
-	//s.router.HandleFunc("/api/v1/invites/new/{password}/", s.authMiddleWare(appHandler.InviteNewEmails)).Methods("POST")
+	//s.router.HandleFunc("/api/v1/webex/invites/new/{password}/", s.authMiddleWare(appHandler.InviteNewEmails)).Methods("POST")
 
 	// Path for static files
 	s.router.PathPrefix("/").Handler(http.FileServer(http.Dir("/public/front-end")))

@@ -3,6 +3,8 @@ package server
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"log"
 	"net/http"
 
@@ -12,11 +14,13 @@ import (
 )
 
 type AppHandler struct {
-	AppController *barcampgr.Controller
-	config barcampgr.Config
+	AppController      *barcampgr.Controller
+	SlackAppController *slack.Controller
+	TeamsAppController *teams.Controller
+	config             barcampgr.Config
 }
 
-func (ah *AppHandler) HandleChatop(w http.ResponseWriter, r *http.Request) {
+func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) {
 	requestData := webexteams.WebhookRequest{}
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
@@ -24,7 +28,7 @@ func (ah *AppHandler) HandleChatop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultant, err := ah.AppController.HandleChatop(requestData)
+	resultant, err := ah.TeamsAppController.HandleChatop(requestData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("Error in handling chatop call: %s", err)
@@ -35,7 +39,7 @@ func (ah *AppHandler) HandleChatop(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func (ah *AppHandler) InviteNewPeople(w http.ResponseWriter, r *http.Request) {
+func (ah *AppHandler) InviteNewPeopleTeams(w http.ResponseWriter, r *http.Request) {
 	requestData := webexteams.WebhookRequest{}
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
@@ -44,7 +48,7 @@ func (ah *AppHandler) InviteNewPeople(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Received membership created webhook, handling: %#v", requestData)
-	resultant, err := ah.AppController.InviteNewPeople(requestData)
+	resultant, err := ah.TeamsAppController.InviteNewPeople(requestData)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("Error in handling chatop call: %s", err)
@@ -68,7 +72,7 @@ func (ah *AppHandler) InviteNewEmails(w http.ResponseWriter, r *http.Request) {
 			}
 
 			log.Printf("Received membership created webhook, handling: %#v", requestData)
-			resultant, err := ah.AppController.InviteNewEmail(requestData)
+			resultant, err := ah.TeamsAppController.InviteNewEmail(requestData)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				log.Printf("Error in handling chatop call: %s", err)

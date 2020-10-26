@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"github.com/twodarek/barcampgr-teams-bot/database"
 	"log"
 	"net/http"
@@ -21,16 +23,17 @@ func main() {
 	httpClient := &http.Client{}
 
 	conf := barcampgr.Config{
-		APIToken: os.Getenv("CISCO_TEAMS_API_TOKEN"),
+		TeamsAPIToken:    os.Getenv("CISCO_TEAMS_API_TOKEN"),
 		BarCampGRWebexId: os.Getenv("BARCAMPGR_WEBEX_ID"),
-		MySqlUser: os.Getenv("MYSQL_USER"),
-		MySqlPass: os.Getenv("MYSQL_PASS"),
-		MySqlServer: os.Getenv("MYSQL_SERVER"),
-		MySqlPort: os.Getenv("MYSQL_PORT"),
-		MySqlDatabase: os.Getenv("MYSQL_DATABASE"),
-		AdminPassword: os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
-		InvitePassword: os.Getenv("BARCAMPGR_INVITE_PASSWORD"),
-		WebexTeamID: os.Getenv("BARCAMPGR_TEAM_ID"),
+		BaseCallbackURL:  os.Getenv("BARCAMPGR_BASE_CALLBACK_URL"),
+		MySqlUser:        os.Getenv("MYSQL_USER"),
+		MySqlPass:        os.Getenv("MYSQL_PASS"),
+		MySqlServer:      os.Getenv("MYSQL_SERVER"),
+		MySqlPort:        os.Getenv("MYSQL_PORT"),
+		MySqlDatabase:    os.Getenv("MYSQL_DATABASE"),
+		AdminPassword:    os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
+		InvitePassword:   os.Getenv("BARCAMPGR_INVITE_PASSWORD"),
+		WebexTeamID:      os.Getenv("BARCAMPGR_TEAM_ID"),
 		WebexOrgID: os.Getenv("WEBEX_ORG_ID"),
 		WebexRoomID: os.Getenv("WEBEX_ROOM_ID"),
 		WebexCallbackURL: os.Getenv("WEBEX_CALLBACK_URL"),
@@ -46,13 +49,28 @@ func main() {
 	log.Println("Database connected")
 
 	ac := barcampgr.NewAppController(
+		httpClient,
+		sdb,
+		conf,
+	)
+
+	sac := slack.NewAppController(
+		ac,
 		teamsClient,
 		httpClient,
 		sdb,
 		conf,
 	)
 
-	s := server.New(ac, conf, router)
+	tac := teams.NewAppController(
+		ac,
+		teamsClient,
+		httpClient,
+		sdb,
+		conf,
+	)
+
+	s := server.New(ac, sac, tac, conf, router)
 
 	// Multiple codepaths use the DefaultServeMux so we start listening at the top
 	go http.ListenAndServe("0.0.0.0:8080", s)
@@ -62,8 +80,12 @@ func main() {
 	select {}
 }
 
+func initSlackClient() error {
+	return nil
+}
+
 func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
-	client.SetAuthToken(config.APIToken)
+	client.SetAuthToken(config.TeamsAPIToken)
 
 	// Clean up old webhooks
 	webhooksQueryParams := &webexteams.ListWebhooksQueryParams{
@@ -84,7 +106,7 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	// Create new @bot message webhook
 	webhookRequest := &webexteams.WebhookCreateRequest{
 		Name:      "BarCampGR Webhook",
-		TargetURL: config.WebexCallbackURL,
+		TargetURL: fmt.Sprintf("%s%s", config.BaseCallbackURL, config.WebexCallbackURL),
 		Resource:  "messages",
 		Event:     "created",
 
@@ -100,7 +122,7 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	// Create new memberships webhook
 	membershipWebhookRequest := &webexteams.WebhookCreateRequest{
 		Name:      "BarCampGR Memberships Webhook",
-		TargetURL: config.WebexMembershipCallbackURL,
+		TargetURL: fmt.Sprintf("%s%s", config.BaseCallbackURL, config.WebexMembershipCallbackURL),
 		Resource:  "memberships",
 		Event:     "created",
 		Filter:    fmt.Sprintf("roomId=%s", config.WebexRoomID),
