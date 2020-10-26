@@ -5,6 +5,7 @@ import "strings"
 type Config struct {
 	APIToken string
 	BarCampGRWebexId string
+	BaseCallbackURL string
 	MySqlUser string
 	MySqlPass string
 	MySqlServer string
@@ -23,6 +24,7 @@ type Config struct {
 func New(
 	apiToken string,
 	barCampGRWebexId string,
+	baseCallbackURL string,
 	mySqlUser string,
 	mySqlPass string,
 	mySqlServer string,
@@ -40,6 +42,7 @@ func New(
 	c := &Config{
 		APIToken: apiToken,
 		BarCampGRWebexId: barCampGRWebexId,
+		BaseCallbackURL: baseCallbackURL,
 		MySqlUser: mySqlUser,
 		MySqlPass: mySqlPass,
 		MySqlServer: mySqlServer,

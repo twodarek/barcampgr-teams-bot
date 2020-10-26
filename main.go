@@ -23,6 +23,7 @@ func main() {
 	conf := barcampgr.Config{
 		APIToken: os.Getenv("CISCO_TEAMS_API_TOKEN"),
 		BarCampGRWebexId: os.Getenv("BARCAMPGR_WEBEX_ID"),
+		BaseCallbackURL: os.Getenv("BARCAMPGR_BASE_CALLBACK_URL"),
 		MySqlUser: os.Getenv("MYSQL_USER"),
 		MySqlPass: os.Getenv("MYSQL_PASS"),
 		MySqlServer: os.Getenv("MYSQL_SERVER"),
@@ -84,7 +85,7 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	// Create new @bot message webhook
 	webhookRequest := &webexteams.WebhookCreateRequest{
 		Name:      "BarCampGR Webhook",
-		TargetURL: config.WebexCallbackURL,
+		TargetURL: fmt.Sprintf("%s%s", config.BaseCallbackURL, config.WebexCallbackURL),
 		Resource:  "messages",
 		Event:     "created",
 
@@ -100,7 +101,7 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 	// Create new memberships webhook
 	membershipWebhookRequest := &webexteams.WebhookCreateRequest{
 		Name:      "BarCampGR Memberships Webhook",
-		TargetURL: config.WebexMembershipCallbackURL,
+		TargetURL: fmt.Sprintf("%s%s", config.BaseCallbackURL, config.WebexMembershipCallbackURL),
 		Resource:  "memberships",
 		Event:     "created",
 		Filter:    fmt.Sprintf("roomId=%s", config.WebexRoomID),
