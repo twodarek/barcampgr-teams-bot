@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Schedule a Talk</title>
+    <script type="text/javascript" src="actions.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Open+Sans:ital@0;1&display=swap">
+</head>
+<body onload="loadPage()">
+    <div id="main">
+        <h1>Schedule a Talk</h1>
+        
+        <form id="create-form" method="post" enctype="multipart/form-data">
+            <label for="title">Title:</label>
+            <input type="text" name="title" id="title">
+
+            <label for="speaker">Speaker:</label>
+            <input type="text" name="speaker" id="speaker" size=50>
+
+            <label for="room">Room:</label>
+            <select name="room" id="roomSelector">
+                <option value="null">-- select a room --</option>
+            </select>
+
+            <label for="time">Time:</label>
+            <select name="time" id="timeSelector">
+                <option value="null">-- select a time --</option>
+            </select>
+
+            <label for="password">
+                Event Password:
+                <span class="label-tip">(This is to prove that you're really here and not just some rando on the internet)</span>
+            </label>
+            <input type="text" name="password" id="password">
+        </form>
+
+        <div class="button-row">
+            <button id="save-button" name="save-button" value="Save">Save</button>
+            <button id="cancel-button" name="cancel-button" value="Cancel">Cancel</button>
+        </div>
+    </div>
+</body>
+</html>
+
