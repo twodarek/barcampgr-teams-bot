@@ -3,17 +3,18 @@ package barcampgr
 import "strings"
 
 type Config struct {
-	APIToken string
+	SlackAPIToken	 string
+	TeamsAPIToken    string
 	BarCampGRWebexId string
-	BaseCallbackURL string
-	MySqlUser string
-	MySqlPass string
-	MySqlServer string
-	MySqlPort string
-	MySqlDatabase string
-	AdminPassword string
-	InvitePassword string
-	WebexTeamID string
+	BaseCallbackURL  string
+	MySqlUser        string
+	MySqlPass        string
+	MySqlServer      string
+	MySqlPort        string
+	MySqlDatabase    string
+	AdminPassword    string
+	InvitePassword   string
+	WebexTeamID      string
 	WebexRoomID string
 	WebexOrgID string
 	WebexCallbackURL string
@@ -22,7 +23,8 @@ type Config struct {
 }
 
 func New(
-	apiToken string,
+	slackApiToken string,
+	teamsApiToken string,
 	barCampGRWebexId string,
 	baseCallbackURL string,
 	mySqlUser string,
@@ -40,17 +42,18 @@ func New(
 	webexAllRooms []string,
 ) *Config {
 	c := &Config{
-		APIToken: apiToken,
+		SlackAPIToken:    slackApiToken,
+		TeamsAPIToken:    teamsApiToken,
 		BarCampGRWebexId: barCampGRWebexId,
-		BaseCallbackURL: baseCallbackURL,
-		MySqlUser: mySqlUser,
-		MySqlPass: mySqlPass,
-		MySqlServer: mySqlServer,
-		MySqlPort: mySqlPort,
-		MySqlDatabase: mySqlDatabase,
-		AdminPassword: adminPassword,
-		InvitePassword: invitePassword,
-		WebexTeamID: webexTeamID,
+		BaseCallbackURL:  baseCallbackURL,
+		MySqlUser:        mySqlUser,
+		MySqlPass:        mySqlPass,
+		MySqlServer:      mySqlServer,
+		MySqlPort:        mySqlPort,
+		MySqlDatabase:    mySqlDatabase,
+		AdminPassword:    adminPassword,
+		InvitePassword:   invitePassword,
+		WebexTeamID:      webexTeamID,
 		WebexRoomID: webexRoomID,
 		WebexOrgID: webexOrgID,
 		WebexCallbackURL: webexCallbackURL,
