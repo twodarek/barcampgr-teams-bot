@@ -17,6 +17,7 @@ type Config struct {
 	AdminPassword    string
 	InvitePassword   string
 	SlackCallbackURL string
+	SlackUsername    string
 	SlackVerificationToken string
 	WebexTeamID      string
 	WebexRoomID string
@@ -39,6 +40,7 @@ func New(
 	adminPassword string,
 	invitePassword string,
 	slackCallbackURL string,
+	slackUsername string,
 	slackVerificationToken string,
 	webexTeamID string,
 	webexRoomID string,
@@ -60,6 +62,7 @@ func New(
 		AdminPassword:    adminPassword,
 		InvitePassword:   invitePassword,
 		SlackCallbackURL: slackCallbackURL,
+		SlackUsername:    slackUsername,
 		SlackVerificationToken: slackVerificationToken,
 		WebexTeamID:      webexTeamID,
 		WebexRoomID: webexRoomID,

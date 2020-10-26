@@ -36,6 +36,7 @@ func main() {
 		AdminPassword:    os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
 		InvitePassword:   os.Getenv("BARCAMPGR_INVITE_PASSWORD"),
 		SlackCallbackURL: os.Getenv("SLACK_CALLBACK_URL"),
+		SlackUsername:    os.Getenv("SLACK_USERNAME"),
 		SlackVerificationToken: os.Getenv("SLACK_VERIFICATION_TOKEN"),
 		WebexTeamID:      os.Getenv("BARCAMPGR_TEAM_ID"),
 		WebexOrgID: 	  os.Getenv("WEBEX_ORG_ID"),
