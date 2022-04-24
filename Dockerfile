@@ -8,7 +8,7 @@ COPY . .
 RUN go build
 
 
-FROM thomaswo/ubuntu-base-image:20200525
+FROM thomaswo/ubuntu-base-image:20220423
 
 RUN mkdir -p /public/front-end
 COPY --from=base /go/src/twodarek/barcampgr-teams-bot/front-end /public/front-end
