@@ -13,7 +13,7 @@ import (
 )
 
 type Controller struct {
-	bc  *barcampgr.Controller
+	bc          *barcampgr.Controller
 	slackClient *slack.Client
 	httpClient  *http.Client
 	sdb         *database.ScheduleDatabase
@@ -23,19 +23,19 @@ type Controller struct {
 
 func NewAppController(
 	barcampgrController *barcampgr.Controller,
-	slackClient	*slack.Client,
-	httpClient  *http.Client,
-	sdb         *database.ScheduleDatabase,
+	slackClient *slack.Client,
+	httpClient *http.Client,
+	sdb *database.ScheduleDatabase,
 	config barcampgr.Config,
 ) *Controller {
 	var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &Controller{
-		bc:    barcampgrController,
-		slackClient:  slackClient,
-		httpClient:   httpClient,
-		sdb:          sdb,
-		config:       config,
-		sRand:        seededRand,
+		bc:          barcampgrController,
+		slackClient: slackClient,
+		httpClient:  httpClient,
+		sdb:         sdb,
+		config:      config,
+		sRand:       seededRand,
 	}
 }
 
@@ -73,7 +73,11 @@ func (ac *Controller) HandleChatop(eventsAPIEvent slackevents.EventsAPIEvent) (s
 			return "", nil
 		}
 
-		user, err :=ac.slackClient.GetUserProfile(message.User, true)
+		slackOpts := &slack.GetUserProfileParameters{
+			UserID:        message.User,
+			IncludeLabels: true,
+		}
+		user, err := ac.slackClient.GetUserProfile(slackOpts)
 		if err != nil {
 			log.Printf("Unable to get profile of user %s.  Error: %s", message.User, err)
 			user = &slack.UserProfile{
@@ -97,6 +101,7 @@ func (ac *Controller) HandleChatop(eventsAPIEvent slackevents.EventsAPIEvent) (s
 	}
 	return "", nil
 }
+
 //
 //	room, _, err := ac.teamsClient.Rooms.GetRoom(message.RoomID)
 //	if err != nil {
