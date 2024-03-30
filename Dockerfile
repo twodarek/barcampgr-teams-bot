@@ -1,4 +1,4 @@
-FROM golang:1.21-stretch as base
+FROM golang:1.21-bullseye    as base
 
 ENV GO111MODULE=on
 
@@ -8,7 +8,7 @@ COPY . .
 RUN go build
 
 
-FROM thomaswo/ubuntu-base-image:20231004
+FROM thomaswo/ubuntu-base-image:20240329
 
 RUN mkdir -p /public/front-end
 COPY --from=base /go/src/twodarek/barcampgr-teams-bot/front-end /public/front-end
