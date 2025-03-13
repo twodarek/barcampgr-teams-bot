@@ -1,6 +1,7 @@
 module github.com/twodarek/barcampgr-teams-bot
 
 go 1.21
+toolchain go1.23.7
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
@@ -17,5 +18,5 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/peterhellberg/link v1.2.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 )
