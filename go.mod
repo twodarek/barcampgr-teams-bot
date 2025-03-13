@@ -1,7 +1,6 @@
 module github.com/twodarek/barcampgr-teams-bot
 
-go 1.21
-toolchain go1.23.7
+go 1.24
 
 require (
 	github.com/go-sql-driver/mysql v1.8.1
