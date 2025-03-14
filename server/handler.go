@@ -10,7 +10,6 @@ import (
 	"github.com/slack-go/slack/slackevents"
 	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
-	"io"
 	"log"
 	"net/http"
 
@@ -83,11 +82,6 @@ func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("Error reading request body: %s", err)
-	}
-	log.Printf("Received body: %s", body)
 	hexPubKey, err := hex.DecodeString(ah.config.DiscordPublicKey)
 	if err != nil {
 		log.Printf("Error decoding hex string pub key: %s", err)
@@ -109,7 +103,7 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Printf("Received %s from Discord", requestData.Type)
+	log.Printf("Received %+v from Discord", requestData)
 
 	if requestData.Type == discordgo.InteractionPing {
 		reply := discordgo.Interaction{

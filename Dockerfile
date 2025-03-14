@@ -1,11 +1,11 @@
-FROM golang:1.24-bookworm    as base
+FROM golang:1.24-bookworm AS base
 
 ENV GO111MODULE=on
 
 # test and build our app
 WORKDIR /go/src/twodarek/barcampgr-teams-bot
 COPY . .
-RUN go build ./...
+RUN go build
 
 
 FROM thomaswo/ubuntu-base-image:20250312
