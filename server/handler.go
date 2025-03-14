@@ -2,12 +2,15 @@ package server
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"encoding/json"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
 	"github.com/slack-go/slack/slackevents"
 	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
+	"io"
 	"log"
 	"net/http"
 
@@ -80,14 +83,41 @@ func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request) {
+	signature := r.Header.Get("X-Signature-Ed25519")
+	timestamp := r.Header.Get("X-Signature-Timestamp")
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading request body: %s", err)
+	}
+	log.Printf("Received body: %s", body)
+
+	pubKey := ed25519.PublicKey(ah.config.DiscordPublicKey)
+	sig := []byte(signature)
+	stringBody := string(body)
+	payload := []byte(fmt.Sprintf("%s%s", timestamp, stringBody))
+	verified := ed25519.Verify(pubKey, payload, sig)
+	if !verified {
+		w.WriteHeader(401)
+		return
+	}
+
 	requestData := discordgo.Interaction{}
-	err := json.NewDecoder(r.Body).Decode(&requestData)
+	err = json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	log.Printf("Received %s from Discord", requestData.Type)
 
+	if requestData.Type == discordgo.InteractionPing {
+		reply := discordgo.Interaction{
+			Type: 1,
+		}
+		err = json.NewEncoder(w).Encode(reply)
+		if err != nil {
+			log.Printf("err: %s", err)
+		}
+	}
 	//resultant, err := ah.TeamsAppController.HandleChatop(requestData)
 	//if err != nil {
 	//	w.WriteHeader(http.StatusInternalServerError)
@@ -96,13 +126,7 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 	//} else {
 	//	w.Write([]byte(resultant))
 	//}
-	reply := discordgo.Interaction{
-		Type: 1,
-	}
-	err = json.NewEncoder(w).Encode(reply)
-	if err != nil {
-		log.Printf("err: %s", err)
-	}
+
 	return
 }
 
