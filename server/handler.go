@@ -78,6 +78,26 @@ func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) 
 	return
 }
 
+func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request) {
+	requestData := ""
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Printf("Received %s from Discord", requestData)
+
+	//resultant, err := ah.TeamsAppController.HandleChatop(requestData)
+	//if err != nil {
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	log.Printf("Error in handling chatop call: %s", err)
+	//	w.Write([]byte(err.Error()))
+	//} else {
+	//	w.Write([]byte(resultant))
+	//}
+	//return
+}
+
 func (ah *AppHandler) InviteNewPeopleSlack(w http.ResponseWriter, r *http.Request) {
 	requestData := webexteams.WebhookRequest{}
 	err := json.NewDecoder(r.Body).Decode(&requestData)

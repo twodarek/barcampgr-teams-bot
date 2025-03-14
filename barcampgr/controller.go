@@ -13,33 +13,35 @@ import (
 )
 
 type Controller struct {
-	httpClient  *http.Client
-	sdb         *database.ScheduleDatabase
-	config      Config
-	sRand       *rand.Rand
+	httpClient *http.Client
+	sdb        *database.ScheduleDatabase
+	config     Config
+	sRand      *rand.Rand
 }
 
 func NewAppController(
-	httpClient  *http.Client,
-	sdb         *database.ScheduleDatabase,
-	config      Config,
+	httpClient *http.Client,
+	sdb *database.ScheduleDatabase,
+	config Config,
 ) *Controller {
 	var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &Controller{
-		httpClient:   httpClient,
-		sdb:          sdb,
-		config:       config,
-		sRand:        seededRand,
+		httpClient: httpClient,
+		sdb:        sdb,
+		config:     config,
+		sRand:      seededRand,
 	}
 }
 
 const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n\nMake sure to `@barcampgrbot` at the start or I won't get the message!"
 
-func (ac *Controller) HandleCommand (message, personDisplayName, personID string) (string, string, error) {
+func (ac *Controller) HandleCommand(message, personDisplayName, personID string) (string, string, error) {
 	message = strings.TrimPrefix(message, "@BarcampGRBot")
 	message = strings.TrimPrefix(message, "@barcampgrbot")
+	message = strings.TrimPrefix(message, "@barcampgr-bot")
 	message = strings.TrimPrefix(message, "BarcampGRBot")
 	message = strings.TrimPrefix(message, "barcampgrbot")
+	message = strings.TrimPrefix(message, "barcampgr-bot")
 	message = strings.TrimPrefix(message, "<@U01D749TL2H>")
 	message = strings.TrimPrefix(message, " ")
 	commandArray := strings.Split(message, " ")
@@ -112,7 +114,7 @@ func (ac *Controller) ParseAndScheduleTalk(personDisplayName string, personID st
 	} else {
 		for i, s := range commandArray {
 			name = name + " " + s
-			if ac.IsCommandWord(commandArray[i + 1]) {
+			if ac.IsCommandWord(commandArray[i+1]) {
 				currentArrayPos = i + 1
 				break
 			}
@@ -131,7 +133,7 @@ func (ac *Controller) ParseAndScheduleTalk(personDisplayName string, personID st
 	currentArrayPos++
 	for i, s := range commandArray[currentArrayPos:] {
 		room = room + " " + s
-		if ac.IsCommandWord(commandArray[i + currentArrayPos + 1]) && strings.ToLower(s) != "life" {
+		if ac.IsCommandWord(commandArray[i+currentArrayPos+1]) && strings.ToLower(s) != "life" {
 			currentArrayPos = i + currentArrayPos + 1
 			break
 		}
@@ -161,21 +163,21 @@ func (ac *Controller) ParseAndScheduleTalk(personDisplayName string, personID st
 	}
 
 	session := database.DBScheduleSession{
-		Time:    &timeObj,
-		Room:    &roomObj,
-		UpdaterName: personDisplayName,
-		UpdaterID: personID,
-		Title:   title,
-		Speaker: name,
-		TimeID:  int(timeObj.ID),
-		RoomID:  int(roomObj.ID),
-		Version: 0,
+		Time:         &timeObj,
+		Room:         &roomObj,
+		UpdaterName:  personDisplayName,
+		UpdaterID:    personID,
+		Title:        title,
+		Speaker:      name,
+		TimeID:       int(timeObj.ID),
+		RoomID:       int(roomObj.ID),
+		Version:      0,
 		UniqueString: ac.GenerateUniqueString(),
 	}
 
 	var sessionObj database.DBScheduleSession
 	if err := ac.sdb.Orm.Where("room_id = ? AND time_id = ? AND out_dated = 0", session.RoomID, session.TimeID).First(&sessionObj).Error; err != nil {
-		if gorm.IsRecordNotFoundError(err){
+		if gorm.IsRecordNotFoundError(err) {
 			result = ac.sdb.Orm.Create(&session)
 			if result.Error != nil {
 				log.Printf("Received error %s when trying to create talk %s", result.Error, ac.CommandArrayToString(commandArray))
@@ -197,7 +199,7 @@ func (ac *Controller) ParseAndScheduleTalk(personDisplayName string, personID st
 }
 
 func (ac *Controller) GetAllMyLinks(personID string) (string, string, error) {
-	var sessions []database.DBScheduleSession;
+	var sessions []database.DBScheduleSession
 	results := ac.sdb.Orm.Where("updater_id = ? AND out_dated = 0", personID).Find(&sessions)
 	if results.Error != nil {
 		return "", "", results.Error
@@ -213,6 +215,7 @@ func (ac *Controller) GetAllMyLinks(personID string) (string, string, error) {
 }
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 func (ac *Controller) GenerateUniqueString() string {
 	for i := 0; i < 10; i++ {
 		resultant := make([]byte, 64)
@@ -227,11 +230,11 @@ func (ac *Controller) GenerateUniqueString() string {
 	return ""
 }
 
-func (ac *Controller) sessionStrNotUsed (sessionStr string) bool {
+func (ac *Controller) sessionStrNotUsed(sessionStr string) bool {
 	session := database.DBScheduleSession{}
 	result := ac.sdb.Orm.Where("unique_string = ?", sessionStr).Find(&session)
 	if result.Error != nil {
-		if gorm.IsRecordNotFoundError(result.Error){
+		if gorm.IsRecordNotFoundError(result.Error) {
 			return true
 		}
 	}
@@ -240,7 +243,7 @@ func (ac *Controller) sessionStrNotUsed (sessionStr string) bool {
 
 func (ac *Controller) CommandArrayToString(array []string) string {
 	var resultant string
-	for _,s := range array {
+	for _, s := range array {
 		resultant = resultant + " " + s
 	}
 	return strings.TrimPrefix(resultant, " ")
@@ -344,16 +347,16 @@ func (ac *Controller) buildRows(sessions []database.DBScheduleSession, rooms []d
 	var resultant []ScheduleRow
 
 	log.Printf("Sessions: %d Rooms: %d", len(sessions), len(rooms))
-	for _,r := range rooms {
+	for _, r := range rooms {
 		resultant = append(resultant, ScheduleRow{
-			Room:    r.Name,
+			Room:     r.Name,
 			Sessions: ac.getSessionsInRoom(sessions, r),
 		})
 	}
 	return resultant
 }
 
-func (ac *Controller) RollSchedule(scheduleBlock string) error  {
+func (ac *Controller) RollSchedule(scheduleBlock string) error {
 	switch scheduleBlock {
 	case "fri-pm":
 		var times []ScheduleTime
@@ -490,7 +493,7 @@ func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) []er
 	for _, time := range times {
 		timeObj := database.DBScheduleTime{}
 		if err := ac.sdb.Orm.Where("start = ? AND day = ?", time.Start, time.Day).First(&timeObj).Error; err != nil {
-			if gorm.IsRecordNotFoundError(err){
+			if gorm.IsRecordNotFoundError(err) {
 				log.Printf("Error in finding existing time for start %s on %s, error: %s", time.Start, time.Day, err)
 				timeObj = database.DBScheduleTime{
 					Day:         time.Day,
@@ -503,7 +506,7 @@ func (ac *Controller) createTimeBlockAndDisableOthers(times []ScheduleTime) []er
 					resultErrors = append(resultErrors, result.Error)
 				}
 			}
-		}else{
+		} else {
 			result = ac.sdb.Orm.Model(&timeObj).Where("id = ?", timeObj.ID).Update("displayable", true)
 			if result.Error != nil {
 				resultErrors = append(resultErrors, result.Error)
@@ -519,7 +522,7 @@ func (ac *Controller) MigrateDB() error {
 
 func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, room database.DBScheduleRoom) []ScheduleSession {
 	var resultant []ScheduleSession
-	for _,s := range sessions {
+	for _, s := range sessions {
 		if s.Time == nil {
 			continue
 		}
@@ -531,12 +534,12 @@ func (ac *Controller) getSessionsInRoom(sessions []database.DBScheduleSession, r
 				altText = fmt.Sprintf("%s by %s in %s at %s", s.Title, s.Speaker, room.Name, s.Time.Start)
 			}
 			resultant = append(resultant, ScheduleSession{
-				Time:    int(s.Time.ID),
-				Room:    int(room.ID),
-				Title:   s.Title,
-				Speaker: s.Speaker,
+				Time:         int(s.Time.ID),
+				Room:         int(room.ID),
+				Title:        s.Title,
+				Speaker:      s.Speaker,
 				UniqueString: s.UniqueString,
-				AltText: altText,
+				AltText:      altText,
 			})
 		}
 	}
@@ -567,6 +570,7 @@ func (ac *Controller) fillTimes(sessions []database.DBScheduleSession, times []d
 }
 
 const outputTimeLayout = "3:04om"
+
 // My sincerest apologies for what you are about to read, time is messy and horrible.
 func (ac *Controller) StandardizeTime(input string) string {
 	input = strings.ToLower(input)
@@ -582,7 +586,7 @@ func (ac *Controller) StandardizeTime(input string) string {
 		input = fmt.Sprintf("%s:%s", input[:1], input[1:])
 		log.Printf("Look at this abomination: before: %s, after: %s", testable, input)
 	}
-	if len(testable) == 4 && !strings.Contains(input, ":"){
+	if len(testable) == 4 && !strings.Contains(input, ":") {
 		input = fmt.Sprintf("%s:%s", input[:2], input[2:])
 		log.Printf("Look at this abomination: before: %s, after: %s", testable, input)
 	}
@@ -639,22 +643,22 @@ func (ac *Controller) UpdateSession(sessionStr string, sessionInbound ScheduleSe
 	}
 	if updated {
 		newSession := database.DBScheduleSession{
-			RoomID:       sessionInbound.Room,
-			TimeID:       sessionInbound.Time,
-			UpdaterName:  sessionObj.UpdaterName,
-			UpdaterID:    sessionObj.UpdaterID,
-			Title:        sessionInbound.Title,
-			Speaker:      sessionInbound.Speaker,
-			UniqueString: ac.GenerateUniqueString(),
+			RoomID:               sessionInbound.Room,
+			TimeID:               sessionInbound.Time,
+			UpdaterName:          sessionObj.UpdaterName,
+			UpdaterID:            sessionObj.UpdaterID,
+			Title:                sessionInbound.Title,
+			Speaker:              sessionInbound.Speaker,
+			UniqueString:         ac.GenerateUniqueString(),
 			PreviousUniqueString: sessionObj.UniqueString,
-			Version:      sessionObj.Version + 1,
-			OutDated:     false,
+			Version:              sessionObj.Version + 1,
+			OutDated:             false,
 		}
 
 		sessionTest := database.DBScheduleSession{}
 		err := ac.sdb.Orm.Where("room_id = ? AND time_id = ? AND out_dated = 0", sessionInbound.Room, sessionInbound.Time).First(&sessionTest).Error
 		if err != nil {
-			if gorm.IsRecordNotFoundError(err){
+			if gorm.IsRecordNotFoundError(err) {
 				sessionObj.OutDated = true
 				result := ac.sdb.Orm.Save(&sessionObj)
 				if result.Error != nil {

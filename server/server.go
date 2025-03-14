@@ -12,11 +12,11 @@ import (
 )
 
 type Server struct {
-	AppController	   *barcampgr.Controller
+	AppController      *barcampgr.Controller
 	SlackAppController *slack.Controller
 	TeamsAppController *teams.Controller
-	config barcampgr.Config
-	router *mux.Router
+	config             barcampgr.Config
+	router             *mux.Router
 }
 
 func New(
@@ -27,26 +27,26 @@ func New(
 	router *mux.Router,
 ) *Server {
 	s := &Server{
-		AppController: ac,
+		AppController:      ac,
 		SlackAppController: sac,
 		TeamsAppController: tac,
-		config: config,
-		router: router,
+		config:             config,
+		router:             router,
 	}
 
 	appHandler := AppHandler{
-		AppController: ac,
+		AppController:      ac,
 		SlackAppController: sac,
 		TeamsAppController: tac,
 		config:             config,
 	}
-
 
 	log.Println("Starting barcampgr-teams-bot")
 
 	s.router.HandleFunc("/api/", s.authMiddleWare(appHandler.RootHello)).Methods("GET")
 
 	// Routes for chatops
+	s.router.HandleFunc("/api/v1/discord/chatops", s.authMiddleWare(appHandler.HandleDiscordChatop)).Methods("POST")
 	s.router.HandleFunc("/api/v1/slack/chatops", s.authMiddleWare(appHandler.HandleSlackChatop)).Methods("POST")
 	s.router.HandleFunc("/api/v1/webex/chatops", s.authMiddleWare(appHandler.HandleTeamsChatop)).Methods("POST")
 
@@ -79,6 +79,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) authMiddleWare(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	}
 }
