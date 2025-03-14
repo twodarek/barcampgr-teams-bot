@@ -97,6 +97,7 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 	pubKey := ed25519.PublicKey(hexPubKey)
 	verified := discordgo.VerifyInteraction(r, pubKey)
 
+	log.Printf("verified %v", verified)
 	if !verified {
 		w.WriteHeader(401)
 		return
