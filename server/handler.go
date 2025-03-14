@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
 	"github.com/slack-go/slack/slackevents"
 	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
@@ -79,13 +80,13 @@ func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request) {
-	requestData := ""
+	requestData := discordgo.Interaction{}
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Printf("Received %s from Discord", requestData)
+	log.Printf("Received %s from Discord", requestData.Type)
 
 	//resultant, err := ah.TeamsAppController.HandleChatop(requestData)
 	//if err != nil {
