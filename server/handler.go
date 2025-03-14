@@ -99,7 +99,7 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 
 	log.Printf("verified %v", verified)
 	if !verified {
-		w.WriteHeader(401)
+		http.Error(w, "invalid request signature", 401)
 		return
 	}
 
