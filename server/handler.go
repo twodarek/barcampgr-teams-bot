@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/ed25519"
 	"encoding/json"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
 	"github.com/slack-go/slack/slackevents"
@@ -83,20 +82,14 @@ func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) 
 }
 
 func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request) {
-	signature := r.Header.Get("X-Signature-Ed25519")
-	timestamp := r.Header.Get("X-Signature-Timestamp")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error reading request body: %s", err)
 	}
 	log.Printf("Received body: %s", body)
-	log.Printf("Received headers: %+v", r.Header)
-
 	pubKey := ed25519.PublicKey(ah.config.DiscordPublicKey)
-	sig := []byte(signature)
-	stringBody := string(body)
-	payload := []byte(fmt.Sprintf("%s%s", timestamp, stringBody))
-	verified := ed25519.Verify(pubKey, payload, sig)
+	verified := discordgo.VerifyInteraction(r, pubKey)
+
 	if !verified {
 		w.WriteHeader(401)
 		return
