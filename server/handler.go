@@ -95,7 +95,8 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 	//} else {
 	//	w.Write([]byte(resultant))
 	//}
-	//return
+	w.Write([]byte("200"))
+	return
 }
 
 func (ah *AppHandler) InviteNewPeopleSlack(w http.ResponseWriter, r *http.Request) {
