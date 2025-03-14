@@ -8,6 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
 	"github.com/slack-go/slack/slackevents"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/discord"
 	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"log"
@@ -19,10 +20,11 @@ import (
 )
 
 type AppHandler struct {
-	AppController      *barcampgr.Controller
-	SlackAppController *bslack.Controller
-	TeamsAppController *teams.Controller
-	config             barcampgr.Config
+	AppController        *barcampgr.Controller
+	DiscordAppController *discord.Controller
+	SlackAppController   *bslack.Controller
+	TeamsAppController   *teams.Controller
+	config               barcampgr.Config
 }
 
 func (ah *AppHandler) HandleSlackChatop(w http.ResponseWriter, r *http.Request) {
@@ -113,15 +115,17 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			log.Printf("err: %s", err)
 		}
+		return
 	}
-	//resultant, err := ah.TeamsAppController.HandleChatop(requestData)
-	//if err != nil {
-	//	w.WriteHeader(http.StatusInternalServerError)
-	//	log.Printf("Error in handling chatop call: %s", err)
-	//	w.Write([]byte(err.Error()))
-	//} else {
-	//	w.Write([]byte(resultant))
-	//}
+
+	resultant, err := ah.DiscordAppController.HandleChatop(requestData)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error in handling chatop call: %s", err)
+		w.Write([]byte(err.Error()))
+	} else {
+		w.Write([]byte(resultant))
+	}
 
 	return
 }

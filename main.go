@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/discord"
 	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"github.com/twodarek/barcampgr-teams-bot/database"
@@ -60,7 +62,20 @@ func main() {
 	sdb := database.NewDatabase(conf.MySqlUser, conf.MySqlPass, conf.MySqlServer, conf.MySqlPort, conf.MySqlDatabase)
 	log.Println("Database connected")
 
+	discordSession, err := discordgo.New(conf.DiscordAPIToken)
+	if err != nil {
+		log.Fatalf("Unable to start discord client: %s", err)
+	}
+
 	ac := barcampgr.NewAppController(
+		httpClient,
+		sdb,
+		conf,
+	)
+
+	dac := discord.NewAppController(
+		ac,
+		discordSession,
 		httpClient,
 		sdb,
 		conf,
@@ -82,7 +97,7 @@ func main() {
 		conf,
 	)
 
-	s := server.New(ac, sac, tac, conf, router)
+	s := server.New(ac, dac, sac, tac, conf, router)
 
 	// Multiple codepaths use the DefaultServeMux so we start listening at the top
 	go http.ListenAndServe("0.0.0.0:8080", s)

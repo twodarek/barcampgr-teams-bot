@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/discord"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"log"
@@ -12,33 +13,37 @@ import (
 )
 
 type Server struct {
-	AppController      *barcampgr.Controller
-	SlackAppController *slack.Controller
-	TeamsAppController *teams.Controller
-	config             barcampgr.Config
-	router             *mux.Router
+	AppController        *barcampgr.Controller
+	DiscordAppController *discord.Controller
+	SlackAppController   *slack.Controller
+	TeamsAppController   *teams.Controller
+	config               barcampgr.Config
+	router               *mux.Router
 }
 
 func New(
 	ac *barcampgr.Controller,
+	dac *discord.Controller,
 	sac *slack.Controller,
 	tac *teams.Controller,
 	config barcampgr.Config,
 	router *mux.Router,
 ) *Server {
 	s := &Server{
-		AppController:      ac,
-		SlackAppController: sac,
-		TeamsAppController: tac,
-		config:             config,
-		router:             router,
+		AppController:        ac,
+		DiscordAppController: dac,
+		SlackAppController:   sac,
+		TeamsAppController:   tac,
+		config:               config,
+		router:               router,
 	}
 
 	appHandler := AppHandler{
-		AppController:      ac,
-		SlackAppController: sac,
-		TeamsAppController: tac,
-		config:             config,
+		AppController:        ac,
+		DiscordAppController: dac,
+		SlackAppController:   sac,
+		TeamsAppController:   tac,
+		config:               config,
 	}
 
 	log.Println("Starting barcampgr-teams-bot")

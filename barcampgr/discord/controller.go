@@ -1,8 +1,7 @@
-package slack
+package discord
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/slack-go/slack/slackevents"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
 	"log"
 	"math/rand"
@@ -42,60 +41,43 @@ func NewAppController(
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 const help_message = "I accept the following commands:\n - `help` to get this message\n - `get schedule`, `get grid`, or `get talks` to get a link to the schedule grid\n - `get links` to get all of the unique links for your talks\n - `dm` to open a direct message connection with me\n - `Schedule me at START_TIME in ROOM for TITLE` to schedule a talk\n - `Schedule web` to schedule a talk via web form\n\nMake sure to `@barcampgrbot` at the start or I won't get the message!"
 
-func (ac *Controller) HandleChatop(eventsAPIEvent slackevents.EventsAPIEvent) (string, error) {
-	if eventsAPIEvent.Type != slackevents.CallbackEvent {
-		return "", nil
-	}
-
-	//	// Filter to make sure it's only from BarCampGR
-	//	if requestData.OrgID != ac.config.WebexOrgID {
-	//		return "", errors.New(fmt.Sprintf("Unable to handle messages from non-BarCampGR orgs %s", requestData.Data.ID))
+func (ac *Controller) HandleChatop(interaction discordgo.Interaction) (string, error) {
+	log.Printf("Got message from discord: %s: ", interaction.Message.Content)
+	//innerEvent := eventsAPIEvent.InnerEvent
+	//switch ev := innerEvent.Data.(type) {
+	//case *slackevents.AppMentionEvent:
+	//	message := eventsAPIEvent.InnerEvent.Data.(*slackevents.AppMentionEvent)
+	//
+	//	log.Printf("Received message `%s` in room %s from person %s, username: %s", message.Text, message.Channel, message.User, message.User)
+	//
+	//	if message.User == ac.config.SlackUsername {
+	//		log.Printf("Rejecting message from myself, returning cleanly")
+	//		return "", nil
 	//	}
 	//
-
-	//
-	//	person, _, err :=ac.teamsClient.People.GetPerson(message.PersonID)
+	//	user, err := ac.discordClient.User(message.User)
 	//	if err != nil {
-	//		return "", errors.New(fmt.Sprintf("Unable to get person id %s", message.PersonID))
+	//		log.Printf("Unable to get profile of user %s.  Error: %s", message.User, err)
+	//		//user = &slack.UserProfile{
+	//		//	DisplayName: message.User,
+	//		//}
 	//	}
-
-	//log.Printf("Got message from person.  Display: %s, Nick: %s, Name: %s %s", person.DisplayName, person.NickName, person.FirstName, person.LastName)
-
-	innerEvent := eventsAPIEvent.InnerEvent
-	switch ev := innerEvent.Data.(type) {
-	case *slackevents.AppMentionEvent:
-		message := eventsAPIEvent.InnerEvent.Data.(*slackevents.AppMentionEvent)
-
-		log.Printf("Received message `%s` in room %s from person %s, username: %s", message.Text, message.Channel, message.User, message.User)
-
-		if message.User == ac.config.SlackUsername {
-			log.Printf("Rejecting message from myself, returning cleanly")
-			return "", nil
-		}
-
-		user, err := ac.discordClient.User(message.User)
-		if err != nil {
-			log.Printf("Unable to get profile of user %s.  Error: %s", message.User, err)
-			//user = &slack.UserProfile{
-			//	DisplayName: message.User,
-			//}
-		}
-
-		reply, dmReply, err := ac.bc.HandleCommand(message.Text, user.Username, message.User)
-		if err != nil {
-			log.Printf("%s", ev.Text)
-			//ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText("I'm sorry, something went wrong.", false))
-		}
-
-		log.Printf("Here's what I would have replied with if I writed up to do so.  Public message: %s, Direct message: %s", reply, dmReply)
-
-		//respChannel, timestamp, err := ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText(reply, false))
-		//log.Printf("Attempted to post to channel %s at timestamp %s, error: %s", respChannel, timestamp, err)
-		log.Printf("Got this text: %s", message.Text)
-	case *slackevents.MessageEvent:
-		message := eventsAPIEvent.InnerEvent.Data.(*slackevents.MessageEvent)
-		log.Printf("Received message `%s` as message id %s in room %s from person %s, username: %s", message.Text, message.ClientMsgID, message.Channel, message.User, message.Username)
-	}
+	//
+	//	reply, dmReply, err := ac.bc.HandleCommand(message.Text, user.Username, message.User)
+	//	if err != nil {
+	//		log.Printf("%s", ev.Text)
+	//		//ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText("I'm sorry, something went wrong.", false))
+	//	}
+	//
+	//	log.Printf("Here's what I would have replied with if I writed up to do so.  Public message: %s, Direct message: %s", reply, dmReply)
+	//
+	//	//respChannel, timestamp, err := ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText(reply, false))
+	//	//log.Printf("Attempted to post to channel %s at timestamp %s, error: %s", respChannel, timestamp, err)
+	//	log.Printf("Got this text: %s", message.Text)
+	//case *slackevents.MessageEvent:
+	//	message := eventsAPIEvent.InnerEvent.Data.(*slackevents.MessageEvent)
+	//	log.Printf("Received message `%s` as message id %s in room %s from person %s, username: %s", message.Text, message.ClientMsgID, message.Channel, message.User, message.Username)
+	//}
 	return "", nil
 }
 
