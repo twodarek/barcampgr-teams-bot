@@ -2,7 +2,6 @@ package slack
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr"
 	"log"
@@ -74,27 +73,24 @@ func (ac *Controller) HandleChatop(eventsAPIEvent slackevents.EventsAPIEvent) (s
 			return "", nil
 		}
 
-		slackOpts := &slack.GetUserProfileParameters{
-			UserID:        message.User,
-			IncludeLabels: true,
-		}
 		user, err := ac.discordClient.User(message.User)
 		if err != nil {
 			log.Printf("Unable to get profile of user %s.  Error: %s", message.User, err)
-			user = &slack.UserProfile{
-				DisplayName: message.User,
-			}
+			//user = &slack.UserProfile{
+			//	DisplayName: message.User,
+			//}
 		}
 
-		reply, dmReply, err := ac.bc.HandleCommand(message.Text, user.DisplayName, message.User)
+		reply, dmReply, err := ac.bc.HandleCommand(message.Text, user.Username, message.User)
 		if err != nil {
-			ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText("I'm sorry, something went wrong.", false))
+			log.Printf("%s", ev.Text)
+			//ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText("I'm sorry, something went wrong.", false))
 		}
 
 		log.Printf("Here's what I would have replied with if I writed up to do so.  Public message: %s, Direct message: %s", reply, dmReply)
 
-		respChannel, timestamp, err := ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText(reply, false))
-		log.Printf("Attempted to post to channel %s at timestamp %s, error: %s", respChannel, timestamp, err)
+		//respChannel, timestamp, err := ac.slackClient.PostMessage(ev.Channel, slack.MsgOptionText(reply, false))
+		//log.Printf("Attempted to post to channel %s at timestamp %s, error: %s", respChannel, timestamp, err)
 		log.Printf("Got this text: %s", message.Text)
 	case *slackevents.MessageEvent:
 		message := eventsAPIEvent.InnerEvent.Data.(*slackevents.MessageEvent)
