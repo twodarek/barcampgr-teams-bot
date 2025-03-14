@@ -90,6 +90,7 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 		log.Printf("Error reading request body: %s", err)
 	}
 	log.Printf("Received body: %s", body)
+	log.Printf("Received headers: %+v", r.Header)
 
 	pubKey := ed25519.PublicKey(ah.config.DiscordPublicKey)
 	sig := []byte(signature)
