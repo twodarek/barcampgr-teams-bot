@@ -1,4 +1,4 @@
-FROM golang:1.24-bookworm    as base
+FROM golang:1.24-bookworm AS base
 
 ENV GO111MODULE=on
 

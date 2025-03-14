@@ -2,9 +2,13 @@ package server
 
 import (
 	"bytes"
+	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
+	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
 	"github.com/slack-go/slack/slackevents"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/discord"
 	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"log"
@@ -16,10 +20,11 @@ import (
 )
 
 type AppHandler struct {
-	AppController      *barcampgr.Controller
-	SlackAppController *bslack.Controller
-	TeamsAppController *teams.Controller
-	config             barcampgr.Config
+	AppController        *barcampgr.Controller
+	DiscordAppController *discord.Controller
+	SlackAppController   *bslack.Controller
+	TeamsAppController   *teams.Controller
+	config               barcampgr.Config
 }
 
 func (ah *AppHandler) HandleSlackChatop(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +80,53 @@ func (ah *AppHandler) HandleTeamsChatop(w http.ResponseWriter, r *http.Request) 
 	} else {
 		w.Write([]byte(resultant))
 	}
+	return
+}
+
+func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request) {
+	hexPubKey, err := hex.DecodeString(ah.config.DiscordPublicKey)
+	if err != nil {
+		log.Printf("Error decoding hex string pub key: %s", err)
+		w.WriteHeader(500)
+		return
+	}
+	pubKey := ed25519.PublicKey(hexPubKey)
+	verified := discordgo.VerifyInteraction(r, pubKey)
+
+	log.Printf("verified %v", verified)
+	if !verified {
+		http.Error(w, "invalid request signature", 401)
+		return
+	}
+
+	requestData := discordgo.Interaction{}
+	err = json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Printf("Received %+v from Discord", requestData)
+
+	if requestData.Type == discordgo.InteractionPing {
+		reply := discordgo.Interaction{
+			Type: 1,
+		}
+		err = json.NewEncoder(w).Encode(reply)
+		if err != nil {
+			log.Printf("err: %s", err)
+		}
+		return
+	}
+
+	resultant, err := ah.DiscordAppController.HandleChatop(requestData)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error in handling chatop call: %s", err)
+		w.Write([]byte(err.Error()))
+	} else {
+		w.Write([]byte(resultant))
+	}
+
 	return
 }
 

@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
+	"github.com/twodarek/barcampgr-teams-bot/barcampgr/discord"
 	bslack "github.com/twodarek/barcampgr-teams-bot/barcampgr/slack"
 	"github.com/twodarek/barcampgr-teams-bot/barcampgr/teams"
 	"github.com/twodarek/barcampgr-teams-bot/database"
@@ -24,24 +26,27 @@ func main() {
 	httpClient := &http.Client{}
 
 	conf := barcampgr.Config{
-		SlackAPIToken:    os.Getenv("SLACK_API_TOKEN"),
-		TeamsAPIToken:    os.Getenv("CISCO_TEAMS_API_TOKEN"),
-		BarCampGRWebexId: os.Getenv("BARCAMPGR_WEBEX_ID"),
-		BaseCallbackURL:  os.Getenv("BARCAMPGR_BASE_CALLBACK_URL"),
-		MySqlUser:        os.Getenv("MYSQL_USER"),
-		MySqlPass:        os.Getenv("MYSQL_PASS"),
-		MySqlServer:      os.Getenv("MYSQL_SERVER"),
-		MySqlPort:        os.Getenv("MYSQL_PORT"),
-		MySqlDatabase:    os.Getenv("MYSQL_DATABASE"),
-		AdminPassword:    os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
-		InvitePassword:   os.Getenv("BARCAMPGR_INVITE_PASSWORD"),
-		SlackCallbackURL: os.Getenv("SLACK_CALLBACK_URL"),
-		SlackUsername:    os.Getenv("SLACK_USERNAME"),
-		SlackVerificationToken: os.Getenv("SLACK_VERIFICATION_TOKEN"),
-		WebexTeamID:      os.Getenv("BARCAMPGR_TEAM_ID"),
-		WebexOrgID: 	  os.Getenv("WEBEX_ORG_ID"),
-		WebexRoomID:      os.Getenv("WEBEX_ROOM_ID"),
-		WebexCallbackURL: os.Getenv("WEBEX_CALLBACK_URL"),
+		SlackAPIToken:              os.Getenv("SLACK_API_TOKEN"),
+		TeamsAPIToken:              os.Getenv("CISCO_TEAMS_API_TOKEN"),
+		DiscordAPIToken:            os.Getenv("DISCORD_API_TOKEN"),
+		BarCampGRWebexId:           os.Getenv("BARCAMPGR_WEBEX_ID"),
+		BaseCallbackURL:            os.Getenv("BARCAMPGR_BASE_CALLBACK_URL"),
+		MySqlUser:                  os.Getenv("MYSQL_USER"),
+		MySqlPass:                  os.Getenv("MYSQL_PASS"),
+		MySqlServer:                os.Getenv("MYSQL_SERVER"),
+		MySqlPort:                  os.Getenv("MYSQL_PORT"),
+		MySqlDatabase:              os.Getenv("MYSQL_DATABASE"),
+		AdminPassword:              os.Getenv("BARCAMPGR_ADMIN_PASSWORD"),
+		InvitePassword:             os.Getenv("BARCAMPGR_INVITE_PASSWORD"),
+		DiscordAppId:               os.Getenv("DISCORD_APP_ID"),
+		DiscordPublicKey:           os.Getenv("DISCORD_PUBLIC_KEY"),
+		SlackCallbackURL:           os.Getenv("SLACK_CALLBACK_URL"),
+		SlackUsername:              os.Getenv("SLACK_USERNAME"),
+		SlackVerificationToken:     os.Getenv("SLACK_VERIFICATION_TOKEN"),
+		WebexTeamID:                os.Getenv("BARCAMPGR_TEAM_ID"),
+		WebexOrgID:                 os.Getenv("WEBEX_ORG_ID"),
+		WebexRoomID:                os.Getenv("WEBEX_ROOM_ID"),
+		WebexCallbackURL:           os.Getenv("WEBEX_CALLBACK_URL"),
 		WebexMembershipCallbackURL: os.Getenv("WEBEX_MEMBERSHIP_CALLBACK_URL"),
 	}
 	conf.SetWebexAllRooms(os.Getenv("WEBEX_ALL_ROOMS"))
@@ -57,7 +62,20 @@ func main() {
 	sdb := database.NewDatabase(conf.MySqlUser, conf.MySqlPass, conf.MySqlServer, conf.MySqlPort, conf.MySqlDatabase)
 	log.Println("Database connected")
 
+	discordSession, err := discordgo.New(conf.DiscordAPIToken)
+	if err != nil {
+		log.Fatalf("Unable to start discord client: %s", err)
+	}
+
 	ac := barcampgr.NewAppController(
+		httpClient,
+		sdb,
+		conf,
+	)
+
+	dac := discord.NewAppController(
+		ac,
+		discordSession,
 		httpClient,
 		sdb,
 		conf,
@@ -79,7 +97,7 @@ func main() {
 		conf,
 	)
 
-	s := server.New(ac, sac, tac, conf, router)
+	s := server.New(ac, dac, sac, tac, conf, router)
 
 	// Multiple codepaths use the DefaultServeMux so we start listening at the top
 	go http.ListenAndServe("0.0.0.0:8080", s)
@@ -114,7 +132,6 @@ func initTeamsClient(client *webexteams.Client, config barcampgr.Config) error {
 		TargetURL: fmt.Sprintf("%s%s", config.BaseCallbackURL, config.WebexCallbackURL),
 		Resource:  "messages",
 		Event:     "created",
-
 	}
 
 	testWebhook, _, err := client.Webhooks.CreateWebhook(webhookRequest)
