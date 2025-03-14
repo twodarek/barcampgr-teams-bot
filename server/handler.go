@@ -96,7 +96,13 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 	//} else {
 	//	w.Write([]byte(resultant))
 	//}
-	w.Write([]byte("200"))
+	reply := discordgo.Interaction{
+		Type: 1,
+	}
+	err = json.NewEncoder(w).Encode(reply)
+	if err != nil {
+		log.Printf("err: %s", err)
+	}
 	return
 }
 
