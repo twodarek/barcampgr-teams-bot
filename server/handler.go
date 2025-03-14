@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"crypto/ed25519"
+	"encoding/hex"
 	"encoding/json"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/mux"
@@ -87,7 +88,13 @@ func (ah *AppHandler) HandleDiscordChatop(w http.ResponseWriter, r *http.Request
 		log.Printf("Error reading request body: %s", err)
 	}
 	log.Printf("Received body: %s", body)
-	pubKey := ed25519.PublicKey(ah.config.DiscordPublicKey)
+	hexPubKey, err := hex.DecodeString(ah.config.DiscordPublicKey)
+	if err != nil {
+		log.Printf("Error decoding hex string pub key: %s", err)
+		w.WriteHeader(500)
+		return
+	}
+	pubKey := ed25519.PublicKey(hexPubKey)
 	verified := discordgo.VerifyInteraction(r, pubKey)
 
 	if !verified {
