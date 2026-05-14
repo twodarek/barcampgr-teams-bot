@@ -30,8 +30,8 @@ github.com/jinzhu/inflection
 # github.com/peterhellberg/link v1.2.0
 ## explicit; go 1.17
 github.com/peterhellberg/link
-# github.com/slack-go/slack v0.17.3
-## explicit; go 1.22
+# github.com/slack-go/slack v0.23.1
+## explicit; go 1.25
 github.com/slack-go/slack
 github.com/slack-go/slack/internal/backoff
 github.com/slack-go/slack/internal/errorsx
