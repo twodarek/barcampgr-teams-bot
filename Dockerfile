@@ -1,4 +1,4 @@
-FROM golang:1.24-bookworm AS base
+FROM golang:1.25 AS base
 
 ENV GO111MODULE=on
 
@@ -8,7 +8,7 @@ COPY . .
 RUN go build
 
 
-FROM thomaswo/ubuntu-base-image:20250312
+FROM git.hedgewizards.org/twodarek/ubuntu-base-image:latest
 
 RUN mkdir -p /public/front-end
 COPY --from=base /go/src/twodarek/barcampgr-teams-bot/front-end /public/front-end
